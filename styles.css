@@ -296,11 +296,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 .note-collection { min-height: 400px; }
 .note-count-badge { flex: 0 0 auto; border: 1px solid #e8e4f8; border-radius: 9px; padding: 4px 9px; background: #faf9ff; color: #7868c8; font-size: 10px; font-weight: 700; }
-.notes-list { display: flex; flex-direction: column; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.notes-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; }
+.note-row { width: 100%; min-width: 0; min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid #e9e7f1; border-radius: 12px; padding: 10px 14px; background: linear-gradient(110deg, #fff, #fcfbff); color: #35334f; text-align: right; cursor: pointer; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background-color .18s ease; }
+.note-row:hover { border-color: #cfc7f0; background: #fff; box-shadow: 0 7px 18px rgba(55, 47, 112, .07); transform: translateY(-1px); }
+.note-row-title { min-width: 0; overflow: hidden; color: #39364f; font-size: 12px; font-weight: 800; line-height: 1.7; text-overflow: ellipsis; white-space: nowrap; direction: rtl; unicode-bidi: isolate; }
+.note-row-arrow { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 9px; background: #f0edff; color: #7360ca; font: 700 17px/1 "Inter", sans-serif; transition: background-color .18s ease, transform .18s ease; }
+.note-row:hover .note-row-arrow { background: #e8e3ff; transform: translateX(-2px); }
 .note-card { min-width: 0; position: relative; overflow: hidden; border: 1px solid #e9e7f1; border-radius: 17px; padding: 20px; background: radial-gradient(circle at 100% 0, rgba(239, 235, 255, .58), transparent 24rem), #fff; box-shadow: 0 8px 22px rgba(40, 36, 83, .035); direction: rtl; unicode-bidi: isolate; }
 .note-card::before { width: 72px; height: 3px; position: absolute; top: 0; right: 20px; border-radius: 0 0 4px 4px; background: linear-gradient(90deg, #80d1b5, #8875e2); content: ""; }
-.note-card-header { margin-bottom: 12px; }
-.note-title { margin: 0; color: #302e49; font-size: 16px; font-weight: 800; line-height: 1.8; }
 .note-card-intro { display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: start; gap: 8px; margin-bottom: 14px; border: 1px solid #e9e5fb; border-radius: 12px; padding: 11px 12px; background: linear-gradient(110deg, #fbfaff, #f6f4ff); }
 .note-intro-mark { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 7px; background: #ebe7ff; color: #8771df; font-size: 12px; line-height: 1; }
 .note-intro-text { margin: 0; color: #5f5b78; font-size: 11px; line-height: 2; direction: rtl; unicode-bidi: isolate; }
@@ -332,10 +335,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .idiom-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
 .idiom-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .idiom-register-badge { border: 1px solid #eee5d7; border-radius: 7px; padding: 2px 7px; background: #fffaf1; color: #946b34; font-size: 9px; font-weight: 800; }
-.idiom-phrase { margin: 0; color: #39344f; direction: ltr; font: 750 17px/1.5 "Roboto Flex", "Inter", sans-serif; overflow-wrap: anywhere; }
-.idiom-meaning { margin: 0; color: #514f67; font-size: 12px; font-weight: 700; line-height: 1.9; }
-.idiom-explanation { margin: 6px 0 0; color: #77758a; font-size: 10px; line-height: 1.9; }
-.idiom-example { margin: 9px 0 0; border-inline-start: 2px solid #d8d0fa; padding-inline-start: 9px; color: #4b7565; direction: ltr; font: 11px/1.8 "Inter", "Roboto Flex", sans-serif; text-align: left; }
+.idiom-phrase { margin: 0; color: #39344f; direction: ltr; unicode-bidi: isolate; font: 750 17px/1.5 "Roboto Flex", "Inter", sans-serif; overflow-wrap: anywhere; }
+.idiom-meaning { margin: 0; color: #514f67; font-size: 12px; font-weight: 700; line-height: 1.9; direction: rtl; text-align: start; }
+.idiom-explanation { margin: 6px 0 0; color: #77758a; font-size: 10px; line-height: 1.9; direction: rtl; text-align: start; }
+.idiom-example { margin: 9px 0 0; border-inline-start: 2px solid #d8d0fa; padding-inline-start: 9px; color: #4b7565; direction: ltr; unicode-bidi: isolate; font: 11px/1.8 "Inter", "Roboto Flex", sans-serif; text-align: left; }
 .idiom-empty { background: #f5f1ff; color: #806cda; }
 
 
@@ -343,13 +346,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .detail-meaning-heading { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .primary-badge { border-radius: 6px; padding: 1px 6px; background: #f2efff; color: #7967ca; font-size: 9px; font-weight: 800; }
 .meaning-index { margin-inline-start: auto; color: #aaa9b6; font-size: 9px; }
-.detail-definition { margin: 9px 0; color: #434357; font-size: 13px; font-weight: 700; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-definition { margin: 9px 0; color: #434357; font-size: 13px; font-weight: 700; line-height: 1.8; direction: rtl; text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; }
 .detail-extra { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; border-top: 1px solid #f0eff4; padding-top: 8px; }
 .detail-extra + .detail-extra { margin-top: 8px; }
 .detail-extra-label { color: #8a899b; font-size: 9px; font-weight: 800; }
-.detail-extra-text { margin: 0; color: #5b5a6d; font-family: "Inter", "Roboto Flex", "Vazirmatn", sans-serif; font-size: 11px; line-height: 1.8; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.detail-extra-text { margin: 0; color: #5b5a6d; font-family: "Inter", "Roboto Flex", "Vazirmatn", sans-serif; font-size: 11px; line-height: 1.8; text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; }
 .detail-extra-text.is-empty { color: #a6a5b1; font-family: Tahoma, "Noto Sans Arabic", sans-serif; font-size: 10px; text-align: right; }
-.detail-example .detail-extra-text { color: #486f60; }
+.detail-example .detail-extra-text { color: #486f60; direction: ltr; unicode-bidi: isolate; text-align: left; }
 
 .app-footer { min-height: 76px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 27px; border-top: 1px solid #e9e9f0; color: #9998a8; font-size: 10px; text-align: center; }
 .app-footer p { margin: 0; }
@@ -357,8 +360,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .footer-static { margin-inline-start: 7px; color: #aaa9b7; }
 
 .word-detail-dialog { width: min(620px, calc(100% - 30px)); max-width: none; max-height: min(88vh, 820px); overflow: auto; border: 1px solid #e8e6f1; border-radius: 20px; padding: 0; background: #fff; color: var(--ink); box-shadow: 0 24px 90px rgba(32, 29, 62, .24); }
+.note-detail-dialog { width: min(860px, calc(100% - 30px)); max-height: min(90vh, 900px); }
 .word-detail-dialog::backdrop { background: rgba(31, 29, 53, .43); backdrop-filter: blur(3px); }
 .dialog-content { position: relative; padding: 28px; }
+.note-detail-title { margin: 5px 0 15px; padding-inline-end: 38px; color: #302e49; font-size: 20px; font-weight: 800; line-height: 1.7; }
+.note-detail-content { min-width: 0; }
+.note-detail-content .note-card { box-shadow: none; }
 .dialog-close { width: 32px; height: 32px; position: absolute; top: 13px; left: 13px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 0; background: #fff; color: #8a899b; font-size: 22px; line-height: 1; cursor: pointer; }
 .dialog-close:hover { background: #f8f7fc; color: #4f4d65; }
 .detail-header { padding-inline-end: 35px; }
@@ -370,6 +377,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .detail-meanings-title { margin: 20px 0 9px; color: #55546a; font-size: 12px; }
 .detail-meanings { display: flex; flex-direction: column; gap: 9px; }
 
+.bidi-run { unicode-bidi: isolate; }
+.bidi-run-en { font-family: "Inter", "Roboto Flex", sans-serif; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
 
 @media (max-width: 1000px) {
@@ -431,9 +440,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .tile-speak-button svg { width: 15px; height: 15px; }
   .word-tile-preview .pos-badge { font-size: 8px; }
   .notes-tip { width: 100%; font-size: 9px; }
+  .note-row { min-height: 50px; padding: 9px 11px; }
+  .note-row-title { font-size: 11px; }
+  .note-detail-dialog { width: calc(100% - 20px); max-height: 92vh; border-radius: 16px; }
+  .note-dialog-content { padding: 23px 17px; }
+  .note-detail-title { padding-inline-end: 35px; font-size: 17px; }
   .note-card { padding: 16px 14px 14px; }
   .note-card::before { right: 14px; }
-  .note-title { font-size: 14px; }
   .note-card-intro { grid-template-columns: 20px minmax(0, 1fr); gap: 7px; padding: 9px 10px; }
   .note-intro-mark { width: 20px; height: 20px; }
   .note-sections { grid-template-columns: minmax(0, 1fr); gap: 9px; }

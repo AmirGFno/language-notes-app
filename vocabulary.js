@@ -1,6 +1,7 @@
 /*
  * فهرست واژه‌ها.
  * همه‌ی بازدیدکنندگان نسخه‌ی یکسان را می‌بینند؛ فقط نگهدارندگان مخزن این فایل را تغییر می‌دهند.
+ * توضیح‌های دوزبانه را با بخش‌های دارای lang جدا کنید تا جهت هر زبان درست بماند.
  */
 window.REPOSITORY_VOCABULARY = [
   {
@@ -44,7 +45,15 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'noun',
         definition: 'مسئول پرونده؛ افسر پرونده',
         example: 'My case officer checks in with me once a month.',
-        explanation: 'عنوان و وظایف دقیق به سازمان و کشور بستگی دارد. برای مأمور نظارت بر آزادی مشروط، در انگلیسی معمولاً عنوان دقیق‌تری مثل probation officer یا parole officer به‌کار می‌رود؛ case officer همیشه به‌تنهایی همین معنی را نمی‌دهد.',
+        explanation: [
+          { text: 'عنوان و وظایف دقیق به سازمان و کشور بستگی دارد. برای مأمور نظارت بر آزادی مشروط، در انگلیسی معمولاً عنوان دقیق‌تری مثل ', lang: 'fa' },
+          { text: 'probation officer', lang: 'en' },
+          { text: ' یا ', lang: 'fa' },
+          { text: 'parole officer', lang: 'en' },
+          { text: ' به‌کار می‌رود؛ ', lang: 'fa' },
+          { text: 'case officer', lang: 'en' },
+          { text: ' همیشه به‌تنهایی همین معنی را نمی‌دهد.', lang: 'fa' }
+        ],
         isPrimary: true
       }
     ]
@@ -64,7 +73,11 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'verb',
         definition: 'قرض دادن؛ وام دادن',
         example: 'The bank loaned him the money.',
-        explanation: 'به معنی قرض‌دادن هم می‌آید؛ در گفت‌وگوی روزمره lend هم بسیار رایج است.',
+        explanation: [
+          { text: 'به معنی قرض‌دادن هم می‌آید؛ در گفت‌وگوی روزمره ', lang: 'fa' },
+          { text: 'lend', lang: 'en' },
+          { text: ' هم بسیار رایج است.', lang: 'fa' }
+        ],
         isPrimary: false
       }
     ]
@@ -77,7 +90,13 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'noun',
         definition: 'اسکوبا؛ دستگاه تنفس مستقل برای غواصی زیر آب',
         example: 'She uses scuba gear on every dive.',
-        explanation: 'در کاربرد روزمره بیشتر در ترکیب‌هایی مثل scuba gear (وسایل غواصی اسکوبا) و scuba diving (غواصی با اسکوبا) دیده می‌شود؛ منظور صرفاً هر نوع وسیله‌ی غواصی نیست.',
+        explanation: [
+          { text: 'در کاربرد روزمره بیشتر در ترکیب‌هایی مثل ', lang: 'fa' },
+          { text: 'scuba gear', lang: 'en' },
+          { text: ' (وسایل غواصی اسکوبا) و ', lang: 'fa' },
+          { text: 'scuba diving', lang: 'en' },
+          { text: ' (غواصی با اسکوبا) دیده می‌شود؛ منظور صرفاً هر نوع وسیله‌ی غواصی نیست.', lang: 'fa' }
+        ],
         isPrimary: true
       }
     ]
@@ -104,7 +123,11 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'phrasal verb',
         definition: 'خوابش بردن؛ چرتش بردن',
         example: 'I dropped off during the movie.',
-        explanation: 'در این کاربرد، drop off بدون مفعول می‌آید.',
+        explanation: [
+          { text: 'در این کاربرد، ', lang: 'fa' },
+          { text: 'drop off', lang: 'en' },
+          { text: ' بدون مفعول می‌آید.', lang: 'fa' }
+        ],
         isPrimary: false
       },
       {
@@ -145,7 +168,13 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'phrasal verb',
         definition: 'تلفن را جواب‌دادن',
         example: 'She picked up the phone on the third ring.',
-        explanation: 'در این کاربرد معمولاً phone یا receiver مفعول است.',
+        explanation: [
+          { text: 'در این کاربرد معمولاً ', lang: 'fa' },
+          { text: 'phone', lang: 'en' },
+          { text: ' یا ', lang: 'fa' },
+          { text: 'receiver', lang: 'en' },
+          { text: ' مفعول است.', lang: 'fa' }
+        ],
         isPrimary: false
       }
     ]
@@ -165,7 +194,11 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'noun',
         definition: 'در خطاب به مرد بزرگسال: «پسر» یا «پسرجان»؛ گاهی تحقیرآمیز',
         example: 'Listen, boy.',
-        explanation: 'خود کلمه همیشه نشان‌دهنده‌ی برتری نیست؛ لحن و رابطه مهم است. خطاب‌کردن مرد بزرگسال با boy می‌تواند از بالا به پایین یا توهین‌آمیز باشد و در بعضی بافت‌های آمریکا، به‌ویژه خطاب به مرد سیاه‌پوست، بار تاریخیِ نژادپرستانه دارد. با احتیاط به‌کار ببر.',
+        explanation: [
+          { text: 'خود کلمه همیشه نشان‌دهنده‌ی برتری نیست؛ لحن و رابطه مهم است. خطاب‌کردن مرد بزرگسال با ', lang: 'fa' },
+          { text: 'boy', lang: 'en' },
+          { text: ' می‌تواند از بالا به پایین یا توهین‌آمیز باشد و در بعضی بافت‌های آمریکا، به‌ویژه خطاب به مرد سیاه‌پوست، بار تاریخیِ نژادپرستانه دارد. با احتیاط به‌کار ببر.', lang: 'fa' }
+        ],
         isPrimary: false
       }
     ]
@@ -178,7 +211,11 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'verb',
         definition: 'گرفتن؛ به‌دست‌آوردن',
         example: 'I got a message from her.',
-        explanation: 'یکی از معنی‌های اصلی get؛ ترجمه‌ی دقیق با جمله عوض می‌شود.',
+        explanation: [
+          { text: 'یکی از معنی‌های اصلی ', lang: 'fa' },
+          { text: 'get', lang: 'en' },
+          { text: '؛ ترجمه‌ی دقیق با جمله عوض می‌شود.', lang: 'fa' }
+        ],
         isPrimary: true
       },
       {
@@ -192,21 +229,39 @@ window.REPOSITORY_VOCABULARY = [
         partOfSpeech: 'verb',
         definition: 'رسیدن',
         example: 'What time did you get home?',
-        explanation: 'در get home، get یعنی به خانه رسیدن.',
+        explanation: [
+          { text: 'در ', lang: 'fa' },
+          { text: 'get home', lang: 'en' },
+          { text: '، ', lang: 'fa' },
+          { text: 'get', lang: 'en' },
+          { text: ' یعنی به خانه رسیدن.', lang: 'fa' }
+        ],
         isPrimary: false
       },
       {
         partOfSpeech: 'verb',
         definition: 'شدن؛ تغییر حالت دادن',
         example: "It's getting cold.",
-        explanation: 'ساختار get + صفت معمولاً یعنی «... شدن».',
+        explanation: [
+          { text: 'ساختار ', lang: 'fa' },
+          { text: 'get + adjective', lang: 'en' },
+          { text: ' معمولاً یعنی «... شدن».', lang: 'fa' }
+        ],
         isPrimary: false
       },
       {
         partOfSpeech: 'verb',
-        definition: 'در فرمان تندِ Get!: «گمشو!» یا «برو پی کارت!»؛ گاهی «بجنب!»',
+        definition: [
+          { text: 'در فرمان تندِ ', lang: 'fa' },
+          { text: 'Get!', lang: 'en' },
+          { text: ': «گمشو!» یا «برو پی کارت!»؛ گاهی «بجنب!»', lang: 'fa' }
+        ],
         example: 'The farmer shouted “Get!” at the stray dog.',
-        explanation: 'این معنی فقط در کاربرد امری و با توجه به موقعیت است؛ برای گفتن روشن‌ترِ «برو بیرون» می‌توان گفت get out.',
+        explanation: [
+          { text: 'این معنی فقط در کاربرد امری و با توجه به موقعیت است؛ برای گفتن روشن‌ترِ «برو بیرون» می‌توان گفت ', lang: 'fa' },
+          { text: 'get out', lang: 'en' },
+          { text: '.', lang: 'fa' }
+        ],
         isPrimary: false
       }
     ]

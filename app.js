@@ -5,16 +5,16 @@
   const DAY_IN_MS = 24 * 60 * 60 * 1000;
   const LEITNER_INTERVALS = [1, 2, 4, 7, 14];
   const POSITIONS = [
-    { value: 'noun', label: 'اسم (Noun)' },
-    { value: 'verb', label: 'فعل (Verb)' },
-    { value: 'adjective', label: 'صفت (Adjective)' },
-    { value: 'adverb', label: 'قید (Adverb)' },
-    { value: 'pronoun', label: 'ضمیر (Pronoun)' },
-    { value: 'preposition', label: 'حرف اضافه (Preposition)' },
-    { value: 'conjunction', label: 'حرف ربط (Conjunction)' },
-    { value: 'phrase', label: 'عبارت (Phrase)' },
-    { value: 'phrasal verb', label: 'فعل عبارتی (Phrasal verb)' },
-    { value: 'other', label: 'سایر (Other)' }
+    { value: 'noun', label: 'اسم' },
+    { value: 'verb', label: 'فعل' },
+    { value: 'adjective', label: 'صفت' },
+    { value: 'adverb', label: 'قید' },
+    { value: 'pronoun', label: 'ضمیر' },
+    { value: 'preposition', label: 'حرف اضافه' },
+    { value: 'conjunction', label: 'حرف ربط' },
+    { value: 'phrase', label: 'عبارت' },
+    { value: 'phrasal verb', label: 'فعل عبارتی' },
+    { value: 'other', label: 'سایر' }
   ];
 
   const elements = {
@@ -60,6 +60,10 @@
     wordDetailDialog: document.getElementById('wordDetailDialog'),
     closeWordDetail: document.getElementById('closeWordDetail'),
     detailWordTitle: document.getElementById('detailWordTitle'),
+    noteDetailDialog: document.getElementById('noteDetailDialog'),
+    closeNoteDetail: document.getElementById('closeNoteDetail'),
+    noteDetailTitle: document.getElementById('noteDetailTitle'),
+    noteDetailContent: document.getElementById('noteDetailContent'),
     detailPronunciation: document.getElementById('detailPronunciation'),
     detailSpeakButton: document.getElementById('detailSpeakButton'),
     detailBoxBadge: document.getElementById('detailBoxBadge'),
@@ -82,6 +86,59 @@
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function normalizeBilingualContent(value, defaultLanguage = 'fa') {
+    const persianPattern = /[\u0600-\u06ff]/;
+    const englishPattern = /[A-Za-z]/;
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (!text) return [];
+      const hasPersian = persianPattern.test(text);
+      const hasEnglish = englishPattern.test(text);
+      if (hasPersian && hasEnglish) return null;
+      const lang = hasPersian ? 'fa' : hasEnglish ? 'en' : defaultLanguage;
+      return [{ text, lang }];
+    }
+    if (!Array.isArray(value)) return null;
+
+    const segments = [];
+    for (const part of value) {
+      if (!isObject(part) || typeof part.text !== 'string' || !part.text.trim()) return null;
+      const lang = part.lang === 'en' || part.lang === 'fa' ? part.lang : null;
+      if (!lang) return null;
+      const hasPersian = persianPattern.test(part.text);
+      const hasEnglish = englishPattern.test(part.text);
+      if ((lang === 'fa' && hasEnglish) || (lang === 'en' && hasPersian)) return null;
+      const previous = segments[segments.length - 1];
+      if (previous && previous.lang === lang) previous.text += part.text;
+      else segments.push({ text: part.text, lang });
+    }
+    return segments;
+  }
+
+  function bilingualPlainText(segments) {
+    return segments.map((segment) => segment.text).join('');
+  }
+
+  function appendBilingualRuns(element, segments) {
+    segments.forEach((segment) => {
+      const run = document.createElement('bdi');
+      run.className = `bidi-run bidi-run-${segment.lang}`;
+      run.dir = segment.lang === 'en' ? 'ltr' : 'rtl';
+      run.lang = segment.lang;
+      run.textContent = segment.text;
+      element.append(run);
+    });
+  }
+
+  function createBilingualText(tagName, className, segments) {
+    const element = document.createElement(tagName);
+    if (className) element.className = className;
+    element.dir = 'rtl';
+    element.lang = 'fa';
+    appendBilingualRuns(element, segments);
+    return element;
   }
 
   function toFaNumber(value) {
@@ -126,13 +183,15 @@
     const meanings = [];
     for (const meaning of record.meanings) {
       if (!isObject(meaning)
-        || typeof meaning.partOfSpeech !== 'string' || !meaning.partOfSpeech.trim()
-        || typeof meaning.definition !== 'string' || !meaning.definition.trim()) return null;
+        || typeof meaning.partOfSpeech !== 'string' || !meaning.partOfSpeech.trim()) return null;
+      const definition = normalizeBilingualContent(meaning.definition);
+      const explanation = normalizeBilingualContent(meaning.explanation == null ? '' : meaning.explanation);
+      if (!definition || definition.length === 0 || !explanation) return null;
       meanings.push({
         partOfSpeech: meaning.partOfSpeech.trim(),
-        definition: meaning.definition.trim(),
+        definition,
         example: typeof meaning.example === 'string' ? meaning.example.trim() : '',
-        explanation: typeof meaning.explanation === 'string' ? meaning.explanation.trim() : '',
+        explanation,
         isPrimary: meaning.isPrimary === true
       });
     }
@@ -166,47 +225,53 @@
   }
 
   function normalizeNoteRecord(record, index) {
-    if (!isObject(record)
-      || typeof record.title !== 'string' || !record.title.trim()
-      || typeof record.intro !== 'string' || !record.intro.trim()
-      || !Array.isArray(record.sections)) return null;
+    if (!isObject(record) || !Array.isArray(record.sections)) return null;
+    const title = normalizeBilingualContent(record.title);
+    const intro = normalizeBilingualContent(record.intro);
+    const takeaway = normalizeBilingualContent(record.takeaway == null ? '' : record.takeaway);
+    if (!title || title.length === 0 || !intro || intro.length === 0 || !takeaway) return null;
 
     const sections = record.sections.map((section) => {
-      if (!isObject(section) || typeof section.title !== 'string' || !section.title.trim()
-        || typeof section.text !== 'string' || !section.text.trim()) return null;
+      if (!isObject(section)) return null;
+      const sectionTitle = normalizeBilingualContent(section.title);
+      const text = normalizeBilingualContent(section.text);
+      if (!sectionTitle || sectionTitle.length === 0 || !text || text.length === 0) return null;
       const examples = Array.isArray(section.examples)
         ? section.examples.map((example) => {
           if (!isObject(example) || typeof example.english !== 'string' || !example.english.trim()
-            || typeof example.persian !== 'string' || !example.persian.trim()) return null;
+            || /[\u0600-\u06ff]/.test(example.english)) return null;
+          const persian = normalizeBilingualContent(example.persian);
+          if (!persian || persian.length === 0) return null;
           return {
             english: example.english.trim(),
-            persian: example.persian.trim(),
+            persian,
             correct: typeof example.correct === 'boolean' ? example.correct : null
           };
         }).filter(Boolean)
         : [];
-      return { title: section.title.trim(), text: section.text.trim(), examples };
+      return { title: sectionTitle, text, examples };
     }).filter(Boolean);
 
     if (sections.length === 0) return null;
     return {
-      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('note', record.title, index),
-      title: record.title.trim(),
-      intro: record.intro.trim(),
+      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('note', bilingualPlainText(title), index),
+      title,
+      intro,
       sections,
-      takeaway: typeof record.takeaway === 'string' ? record.takeaway.trim() : ''
+      takeaway
     };
   }
 
   function normalizeIdiomRecord(record, index) {
-    if (!isObject(record)
-      || typeof record.phrase !== 'string' || !record.phrase.trim()
-      || typeof record.meaning !== 'string' || !record.meaning.trim()) return null;
+    if (!isObject(record) || typeof record.phrase !== 'string' || !record.phrase.trim()) return null;
+    const meaning = normalizeBilingualContent(record.meaning);
+    const explanation = normalizeBilingualContent(record.explanation == null ? '' : record.explanation);
+    if (!meaning || meaning.length === 0 || !explanation) return null;
     return {
       id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('idiom', record.phrase, index),
       phrase: record.phrase.trim(),
-      meaning: record.meaning.trim(),
-      explanation: typeof record.explanation === 'string' ? record.explanation.trim() : '',
+      meaning,
+      explanation,
       example: typeof record.example === 'string' ? record.example.trim() : '',
       register: typeof record.register === 'string' ? record.register.trim() : ''
     };
@@ -282,7 +347,7 @@
 
   function getPartOfSpeechLabel(value) {
     const position = POSITIONS.find((item) => item.value === value);
-    return position ? position.label : value;
+    return position ? position.label : 'سایر';
   }
 
   function getPrimaryMeaning(word) {
@@ -296,7 +361,12 @@
       const searchable = [
         entry.word,
         entry.pronunciation,
-        ...entry.meanings.flatMap((meaning) => [meaning.partOfSpeech, meaning.definition, meaning.example, meaning.explanation])
+        ...entry.meanings.flatMap((meaning) => [
+          meaning.partOfSpeech,
+          bilingualPlainText(meaning.definition),
+          meaning.example,
+          bilingualPlainText(meaning.explanation)
+        ])
       ].join(' ').toLocaleLowerCase();
       return searchable.includes(query);
     }).sort((first, second) => first.word.localeCompare(second.word, 'en'));
@@ -343,9 +413,8 @@
     preview.className = 'word-tile-preview';
     preview.append(
       elementWithText('span', 'pos-badge', getPartOfSpeechLabel(primary.partOfSpeech)),
-      elementWithText('span', 'word-tile-definition', primary.definition)
+      createBilingualText('span', 'word-tile-definition', primary.definition)
     );
-    preview.lastElementChild.dir = 'auto';
     openButton.append(preview, elementWithText('span', 'word-tile-action', 'همه‌ی معنی‌ها'));
 
     const speakButton = document.createElement('button');
@@ -389,19 +458,15 @@
     if (meaning.isPrimary) heading.append(elementWithText('span', 'primary-badge', 'پرکاربردترین معنی'));
     heading.append(elementWithText('span', 'meaning-index', `معنی ${toFaNumber(index + 1)}`));
 
-    const definition = elementWithText('p', 'detail-definition', meaning.definition);
-    definition.dir = 'auto';
+    const definition = createBilingualText('p', 'detail-definition', meaning.definition);
     card.append(heading, definition);
 
     const explanation = document.createElement('div');
     explanation.className = 'detail-extra';
     explanation.append(elementWithText('span', 'detail-extra-label', 'توضیحات'));
-    const explanationText = elementWithText(
-      'p',
-      meaning.explanation ? 'detail-extra-text' : 'detail-extra-text is-empty',
-      meaning.explanation || 'برای این معنی توضیحی ثبت نشده است.'
-    );
-    explanationText.dir = 'auto';
+    const explanationText = meaning.explanation.length > 0
+      ? createBilingualText('p', 'detail-extra-text', meaning.explanation)
+      : createNoteText('p', 'detail-extra-text is-empty', 'برای این معنی توضیحی ثبت نشده است.');
     explanation.append(explanationText);
     card.append(explanation);
 
@@ -413,8 +478,8 @@
       meaning.example ? 'detail-extra-text' : 'detail-extra-text is-empty',
       meaning.example || 'برای این معنی مثالی ثبت نشده است.'
     );
-    exampleText.dir = 'auto';
-    exampleText.lang = 'en';
+    exampleText.dir = meaning.example ? 'ltr' : 'rtl';
+    exampleText.lang = meaning.example ? 'en' : 'fa';
     example.append(exampleText);
     card.append(example);
     container.append(card);
@@ -538,26 +603,39 @@
       line.append(status);
     }
 
-    const translation = createNoteText('p', 'note-example-translation', example.persian);
+    const translation = createBilingualText('p', 'note-example-translation', example.persian);
     item.append(line, translation);
     return item;
   }
 
-  function renderNoteCard(note) {
+  function renderNoteSummary(note) {
+    const button = document.createElement('button');
+    button.className = 'note-row';
+    button.type = 'button';
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-controls', 'noteDetailDialog');
+    const plainTitle = bilingualPlainText(note.title);
+    button.setAttribute('aria-label', `نمایش جزئیات نکته: ${plainTitle}`);
+    button.title = plainTitle;
+    button.append(createBilingualText('span', 'note-row-title', note.title));
+    const arrow = elementWithText('span', 'note-row-arrow', '←');
+    arrow.setAttribute('aria-hidden', 'true');
+    button.append(arrow);
+    button.addEventListener('click', () => openNoteDetail(note.id));
+    return button;
+  }
+
+  function renderNoteContent(note) {
     const card = document.createElement('article');
-    card.className = 'note-card';
+    card.className = 'note-card note-detail-card';
     card.dir = 'rtl';
     card.lang = 'fa';
-
-    const header = document.createElement('header');
-    header.className = 'note-card-header';
-    header.append(createNoteText('h3', 'note-title', note.title));
 
     const intro = document.createElement('div');
     intro.className = 'note-card-intro';
     const introMark = elementWithText('span', 'note-intro-mark', '✦');
     introMark.setAttribute('aria-hidden', 'true');
-    intro.append(introMark, createNoteText('p', 'note-intro-text', note.intro));
+    intro.append(introMark, createBilingualText('p', 'note-intro-text', note.intro));
 
     const sections = document.createElement('div');
     sections.className = 'note-sections';
@@ -569,30 +647,39 @@
       sectionHeader.className = 'note-section-header';
       const sectionNumber = elementWithText('span', 'note-section-number', toFaNumber(index + 1));
       sectionNumber.setAttribute('aria-hidden', 'true');
-      sectionHeader.append(sectionNumber, createNoteText('h4', 'note-section-title', section.title));
-      sectionCard.append(sectionHeader, createNoteText('p', 'note-section-text', section.text));
+      sectionHeader.append(sectionNumber, createBilingualText('h3', 'note-section-title', section.title));
+      sectionCard.append(sectionHeader, createBilingualText('p', 'note-section-text', section.text));
 
       if (section.examples.length > 0) {
         const examples = document.createElement('ul');
         examples.className = 'note-example-list';
-        examples.setAttribute('aria-label', `نمونه‌ها: ${section.title}`);
+        examples.setAttribute('aria-label', `نمونه‌ها: ${bilingualPlainText(section.title)}`);
         examples.replaceChildren(...section.examples.map(renderNoteExample));
         sectionCard.append(examples);
       }
       sections.append(sectionCard);
     });
 
-    card.append(header, intro, sections);
-    if (note.takeaway) {
+    card.append(intro, sections);
+    if (note.takeaway.length > 0) {
       const takeaway = document.createElement('aside');
       takeaway.className = 'note-takeaway';
       takeaway.append(
         elementWithText('span', 'note-takeaway-label', 'جمع‌بندی'),
-        createNoteText('p', 'note-takeaway-text', note.takeaway)
+        createBilingualText('p', 'note-takeaway-text', note.takeaway)
       );
       card.append(takeaway);
     }
     return card;
+  }
+
+  function openNoteDetail(id) {
+    const note = sharedNotes.find((record) => record.id === id);
+    if (!note) return;
+    elements.noteDetailTitle.replaceChildren();
+    appendBilingualRuns(elements.noteDetailTitle, note.title);
+    elements.noteDetailContent.replaceChildren(renderNoteContent(note));
+    elements.noteDetailDialog.showModal();
   }
 
   function renderIdiomCard(idiom) {
@@ -608,13 +695,10 @@
     if (idiom.register) badges.append(elementWithText('span', 'idiom-register-badge', idiom.register));
     header.append(phrase, badges);
 
-    const meaning = elementWithText('p', 'idiom-meaning', idiom.meaning);
-    meaning.dir = 'auto';
+    const meaning = createBilingualText('p', 'idiom-meaning', idiom.meaning);
     card.append(header, meaning);
-    if (idiom.explanation) {
-      const explanation = elementWithText('p', 'idiom-explanation', idiom.explanation);
-      explanation.dir = 'auto';
-      card.append(explanation);
+    if (idiom.explanation.length > 0) {
+      card.append(createBilingualText('p', 'idiom-explanation', idiom.explanation));
     }
     if (idiom.example) {
       const example = elementWithText('p', 'idiom-example', idiom.example);
@@ -626,7 +710,7 @@
   }
 
   function renderNotes() {
-    elements.sharedNotesList.replaceChildren(...sharedNotes.map(renderNoteCard));
+    elements.sharedNotesList.replaceChildren(...sharedNotes.map(renderNoteSummary));
     elements.sharedNotesList.hidden = sharedNotes.length === 0;
     elements.emptySharedNotes.hidden = sharedNotes.length > 0;
     elements.sharedNoteCount.textContent = `${toFaNumber(sharedNotes.length)} نکته`;
@@ -733,6 +817,13 @@
   elements.closeWordDetail.addEventListener('click', () => elements.wordDetailDialog.close());
   elements.wordDetailDialog.addEventListener('close', () => {
     activeWordDetailId = null;
+  });
+  elements.closeNoteDetail.addEventListener('click', () => elements.noteDetailDialog.close());
+  elements.noteDetailDialog.addEventListener('close', () => elements.noteDetailContent.replaceChildren());
+  [elements.wordDetailDialog, elements.noteDetailDialog].forEach((dialog) => {
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
   });
 
   if (storageReadFailed) {

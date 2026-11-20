@@ -4,9 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f6f7fb">
-    <meta name="description" content="دفترچه‌ای آفلاین برای یادگیری واژگان و نگهداری نکته‌های انگلیسی.">
+    <meta name="description" content="دفترچه‌ای ایستا برای یادگیری واژگان و نگهداری نکته‌های انگلیسی با جعبه‌ی لایتنر.">
     <title>دفتر زبان | واژگان و نکته‌های انگلیسی</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="users.js" defer></script>
+    <script src="shared-notes.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -31,11 +33,6 @@
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 2.5v9m0 0 3.5-3.5M10 11.5 6.5 8M3.5 13v3.25c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
             <span>خروجی گرفتن (Export)</span>
           </button>
-          <button class="button button-quiet" id="importButton" type="button" title="ورود فایل پشتیبان یا واژه‌های تازه">
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 12.5v-9m0 0L6.5 7M10 3.5 13.5 7M3.5 13v3.25c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            <span>ورود اطلاعات (Import)</span>
-          </button>
-          <input id="importFile" type="file" accept=".json,application/json" hidden>
         </div>
       </header>
 
@@ -44,11 +41,7 @@
           <div class="welcome-copy">
             <span class="eyebrow"><span class="eyebrow-dot" aria-hidden="true"></span>همراه کوچک مسیر یادگیری</span>
             <h1 id="welcomeTitle">هر واژه، یک قدم<br class="desktop-break"> به انگلیسی روان‌تر.</h1>
-            <p>لغت‌های تازه و نکته‌هایی را که یاد می‌گیری ثبت کن؛ دفترچه‌ات همیشه در همین مرورگر همراهت می‌ماند.</p>
-            <div class="privacy-note">
-              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 2.5 4 5v4.2c0 3.7 2.55 6.9 6 8.3 3.45-1.4 6-4.6 6-8.3V5l-6-2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="m7.5 9.9 1.7 1.7 3.4-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-              <span>اطلاعات فقط روی دستگاه شما ذخیره می‌شود</span>
-            </div>
+            <p>واژه‌های هر کاربر در همین دستگاه می‌مانند؛ نکته‌های منتشرشده از مخزن برای همه یکسان‌اند.</p>
           </div>
           <div class="welcome-art" aria-hidden="true">
             <span class="art-orbit orbit-one"></span>
@@ -74,7 +67,14 @@
                 <svg viewBox="0 0 20 20" fill="none"><path d="M5.5 3.5h6l3 3v10h-9v-13Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="M11.5 3.5v3h3M8 10h4M8 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
               </span>
               <span class="stat-number" id="notesTotal">۰</span>
-              <span class="stat-label">نکته‌ی ثبت‌شده</span>
+              <span class="stat-label">نکته‌ی مشترک</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon stat-icon-review" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none"><path d="M16 9.5a6 6 0 0 0-10.5-3.9L4 7M4 4v3h3M4 10.5a6 6 0 0 0 10.5 3.9L16 13m0 3v-3h-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </span>
+              <span class="stat-number" id="leitnerTotal">۰</span>
+              <span class="stat-label">آماده‌ی مرور</span>
             </div>
           </div>
         </section>
@@ -87,10 +87,19 @@
             واژگان
             <span id="vocabularyTabCount" class="tab-count">۰</span>
           </button>
+          <button class="section-tab" id="leitnerTab" type="button" role="tab" aria-selected="false" aria-controls="leitnerPanel" tabindex="-1">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M3.5 6.5h13M5 3.5h10c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5V5c0-.83.67-1.5 1.5-1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M6.5 9.5h3v3h-3zM12 9.5h1.5M12 12.5h1.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+            جعبه لایتنر
+            <span id="leitnerTabCount" class="tab-count">۰</span>
+          </button>
           <button class="section-tab" id="notesTab" type="button" role="tab" aria-selected="false" aria-controls="notesPanel" tabindex="-1">
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M5.25 3.5h6l3.5 3.5v9.25c0 .69-.56 1.25-1.25 1.25h-8.5c-.69 0-1.25-.56-1.25-1.25v-11.5c0-.69.56-1.25 1.25-1.25Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path><path d="M11 3.75V7h3.25M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
             نکته‌ها
             <span id="notesTabCount" class="tab-count">۰</span>
+          </button>
+          <button class="section-tab" id="userDataTab" type="button" role="tab" aria-selected="false" aria-controls="userDataPanel" tabindex="-1">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3" stroke="currentColor" stroke-width="1.5"></circle><path d="M4.5 16c.6-2.5 2.5-3.75 5.5-3.75s4.9 1.25 5.5 3.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
+            داده‌های من
           </button>
         </nav>
 
@@ -99,17 +108,7 @@
             <div>
               <span class="section-kicker">بخش اول</span>
               <h2>دفتر واژگان</h2>
-              <p>واژه‌های انگلیسی تازه را ثبت کن و با فلش‌کارت مرورشان کن.</p>
-            </div>
-            <div class="view-switch" role="group" aria-label="حالت نمایش واژگان">
-              <button id="listModeButton" class="view-button is-selected" type="button" aria-pressed="true">
-                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M7.5 5h9M7.5 10h9M7.5 15h9M3.5 5h.01M3.5 10h.01M3.5 15h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-                فهرست
-              </button>
-              <button id="flashcardModeButton" class="view-button" type="button" aria-pressed="false">
-                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M5.25 4h9.5c.69 0 1.25.56 1.25 1.25v9.5c0 .69-.56 1.25-1.25 1.25h-9.5C4.56 16 4 15.44 4 14.75v-9.5C4 4.56 4.56 4 5.25 4Z" stroke="currentColor" stroke-width="1.6"></path><path d="M7 7.5h6M7 10.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
-                حالت فلش‌کارت
-              </button>
+              <p>هر واژه را در یک خانه ببین؛ برای مثال‌ها و همه‌ی معنی‌ها روی آن بزن.</p>
             </div>
           </div>
 
@@ -121,7 +120,7 @@
                 </span>
                 <div>
                   <h3 id="addWordTitle">افزودن واژه‌ی تازه</h3>
-                  <p>یک واژه و دست‌کم یک معنی بنویس.</p>
+                  <p>معنی اول به‌عنوان معنی پرکاربرد نشان داده می‌شود.</p>
                 </div>
               </div>
               <form id="wordForm" class="form-stack">
@@ -129,8 +128,15 @@
                   <label for="wordInput">کلمه (انگلیسی)</label>
                   <input id="wordInput" name="word" type="text" dir="ltr" lang="en" autocomplete="off" spellcheck="false" placeholder="مثلاً: serendipity" required>
                 </div>
+                <div class="form-field">
+                  <label for="pronunciationInput">تلفظ (اختیاری)</label>
+                  <div class="pronunciation-input-wrap">
+                    <input id="pronunciationInput" name="pronunciation" type="text" dir="ltr" lang="en-fonipa" autocomplete="off" placeholder="مثلاً: /ˌser.ənˈdɪp.ə.ti/">
+                    <span class="pronunciation-hint" aria-hidden="true">IPA</span>
+                  </div>
+                </div>
                 <fieldset class="meanings-fieldset">
-                  <legend>معنی‌ها</legend>
+                  <legend>معنی‌ها، مثال و توضیحات</legend>
                   <div id="meaningFields" class="meaning-fields"></div>
                   <button id="addMeaningButton" class="text-button add-meaning-button" type="button">
                     <span aria-hidden="true">＋</span> افزودن معنی دیگر
@@ -155,52 +161,77 @@
                   <input id="wordSearch" type="search" placeholder="جست‌وجوی واژه یا معنی" autocomplete="off">
                 </label>
               </div>
-              <div id="wordListView" class="word-list-view">
-                <ul id="wordList" class="word-list" aria-label="فهرست واژه‌های ذخیره‌شده"></ul>
-                <div id="emptyWords" class="empty-state" hidden>
-                  <span class="empty-illustration" aria-hidden="true">Aa</span>
-                  <h4>هنوز واژه‌ای اینجا نیست</h4>
-                  <p>از فرم کناری اولین واژه‌ی انگلیسی‌ات را اضافه کن.</p>
-                </div>
-                <div id="noSearchResults" class="empty-state compact-empty" hidden>
-                  <span class="empty-illustration" aria-hidden="true">⌕</span>
-                  <h4>واژه‌ای پیدا نشد</h4>
-                  <p>عبارت دیگری را جست‌وجو کن.</p>
+              <ul id="wordList" class="word-grid" aria-label="واژه‌های ذخیره‌شده"></ul>
+              <div id="emptyWords" class="empty-state" hidden>
+                <span class="empty-illustration" aria-hidden="true">Aa</span>
+                <h4>هنوز واژه‌ای اینجا نیست</h4>
+                <p>از فرم کناری اولین واژه‌ی انگلیسی‌ات را اضافه کن.</p>
+              </div>
+              <div id="noSearchResults" class="empty-state compact-empty" hidden>
+                <span class="empty-illustration" aria-hidden="true">⌕</span>
+                <h4>واژه‌ای پیدا نشد</h4>
+                <p>عبارت دیگری را جست‌وجو کن.</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="content-panel" id="leitnerPanel" role="tabpanel" aria-labelledby="leitnerTab" tabindex="0" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">مرور با فاصله</span>
+              <h2>جعبه لایتنر</h2>
+              <p>واژه‌هایی که به‌خاطر داری به جعبه‌ی بعدی می‌روند؛ واژه‌های سخت دوباره از جعبه‌ی اول شروع می‌کنند.</p>
+            </div>
+            <span class="due-summary" id="leitnerDueSummary">۰ واژه برای مرور امروز</span>
+          </div>
+
+          <div class="leitner-layout">
+            <aside class="surface leitner-box-surface" aria-labelledby="boxOverviewTitle">
+              <div class="surface-heading">
+                <span class="surface-icon review-surface-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="none"><path d="M3.5 6.5h13M5 3.5h10c.83 0 1.5.67 1.5 1.5v10c0 .83-.67 1.5-1.5 1.5H5c-.83 0-1.5-.67-1.5-1.5V5c0-.83.67-1.5 1.5-1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path><path d="M6.5 9.5h3v3h-3zM12 9.5h1.5M12 12.5h1.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></path></svg>
+                </span>
+                <div>
+                  <h3 id="boxOverviewTitle">پنج جعبه‌ی مرور</h3>
+                  <p>هر جعبه فاصله‌ی مرور طولانی‌تری دارد.</p>
                 </div>
               </div>
-              <div id="flashcardView" class="flashcard-view" hidden>
-                <div class="flashcard-toolbar">
-                  <span id="flashcardPosition" class="flashcard-position"></span>
-                  <span class="flashcard-hint">برای دیدن معنی، روی کارت بزن</span>
+              <ol id="leitnerBoxes" class="leitner-box-list" aria-label="تعداد واژه‌ها در هر جعبه"></ol>
+              <p class="leitner-explainer">اگر معنی را به‌خاطر آوردی «بلدم» را بزن. اگر نه، واژه به جعبه‌ی اول برمی‌گردد.</p>
+            </aside>
+
+            <section class="surface review-surface" aria-labelledby="reviewTitle">
+              <div class="collection-heading review-heading">
+                <div>
+                  <h3 id="reviewTitle">مرور امروز</h3>
+                  <p id="reviewCountText">واژه‌های موعددار در این بخش نمایش داده می‌شوند.</p>
                 </div>
-                <button id="flashcard" class="flashcard" type="button" aria-pressed="false">
-                  <span class="flashcard-inner">
-                    <span class="flashcard-face flashcard-front">
-                      <span class="face-label">واژه‌ی انگلیسی</span>
-                      <span id="flashcardWord" class="flashcard-word" dir="ltr" lang="en"></span>
-                      <span class="face-decoration" aria-hidden="true">✦</span>
-                    </span>
-                    <span class="flashcard-face flashcard-back" aria-hidden="true">
-                      <span class="face-label">معنی و نوع کلمه</span>
-                      <span id="flashcardMeanings" class="flashcard-meanings"></span>
-                    </span>
-                  </span>
-                </button>
-                <div class="flashcard-controls">
-                  <button id="previousCardButton" class="button button-outline" type="button">
-                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m12 4-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    قبلی
-                  </button>
-                  <button id="nextCardButton" class="button button-primary" type="button">
-                    بعدی
-                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m8 4 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span id="reviewBoxBadge" class="review-box-badge" hidden></span>
+              </div>
+
+              <div id="reviewCard" class="review-card" hidden>
+                <div class="review-word-area">
+                  <span class="face-label">واژه‌ی انگلیسی</span>
+                  <h4 id="reviewWord" class="review-word" dir="ltr" lang="en"></h4>
+                  <p id="reviewPronunciation" class="review-pronunciation" dir="ltr" lang="en-fonipa" hidden></p>
+                  <button id="reviewSpeakButton" class="text-button speak-button" type="button" hidden>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M3.5 8v4h3l4 3V5l-4 3h-3ZM13 7a4.25 4.25 0 0 1 0 6M14.8 4.8a7.35 7.35 0 0 1 0 10.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    شنیدن تلفظ
                   </button>
                 </div>
-                <div id="emptyFlashcards" class="empty-state compact-empty" hidden>
-                  <span class="empty-illustration" aria-hidden="true">Aa</span>
-                  <h4>کارت نمایشی وجود ندارد</h4>
-                  <p>برای این جست‌وجو واژه‌ای پیدا نشد.</p>
+                <div id="reviewAnswer" class="review-answer" hidden></div>
+                <button id="revealAnswerButton" class="button button-primary reveal-answer-button" type="button">نمایش معنی‌ها</button>
+                <div id="reviewActions" class="review-actions" hidden>
+                  <button id="markUnknownButton" class="button button-outline" type="button">هنوز یاد نگرفته‌ام</button>
+                  <button id="markKnownButton" class="button button-primary" type="button">بلدم، بعدی</button>
                 </div>
+              </div>
+
+              <div id="emptyReview" class="empty-state review-empty" hidden>
+                <span class="empty-illustration review-empty-icon" aria-hidden="true">✓</span>
+                <h4 id="emptyReviewTitle">مرور امروز تمام شد!</h4>
+                <p id="emptyReviewText">واژه‌ی موعدداری برای مرور باقی نمانده است.</p>
               </div>
             </section>
           </div>
@@ -209,57 +240,61 @@
         <section class="content-panel" id="notesPanel" role="tabpanel" aria-labelledby="notesTab" tabindex="0" hidden>
           <div class="section-heading">
             <div>
-              <span class="section-kicker">بخش دوم</span>
-              <h2>دفتر نکته‌ها</h2>
-              <p>یادداشت خامت را بنویس، نسخه‌ی اصلاح‌شده را هم کنار آن نگه دار.</p>
-            </div>
-            <div class="notes-tip">
-              <span aria-hidden="true">✦</span>
-              متن اصلاح‌شده را پس از گرفتن کمک از هوش مصنوعی اینجا بچسبان.
+              <span class="section-kicker">بخش سوم</span>
+              <h2>نکته‌های انگلیسی</h2>
+              <p>نکته‌های ثبت‌شده در مخزن برای همه نمایش داده می‌شوند و در برنامه فقط خواندنی‌اند.</p>
             </div>
           </div>
-
-          <div class="notes-layout">
-            <aside class="surface form-surface note-form-surface" aria-labelledby="addNoteTitle">
-              <div class="surface-heading">
-                <span class="surface-icon notes-surface-icon" aria-hidden="true">
-                  <svg viewBox="0 0 20 20" fill="none"><path d="M5.25 3.5h6l3.5 3.5v9.25c0 .69-.56 1.25-1.25 1.25h-8.5c-.69 0-1.25-.56-1.25-1.25v-11.5c0-.69.56-1.25 1.25-1.25Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="M11 3.75V7h3.25M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>
-                </span>
-                <div>
-                  <h3 id="addNoteTitle">ثبت نکته‌ی تازه</h3>
-                  <p>هر دو نسخه را برای مرور ذخیره کن.</p>
-                </div>
-              </div>
-              <form id="noteForm" class="form-stack">
-                <div class="form-field">
-                  <label for="originalNote">نکته خام (انگلیسی)</label>
-                  <textarea id="originalNote" name="originalNote" dir="auto" lang="en" rows="5" placeholder="جمله یا نکته‌ی اولیه‌ات را بنویس…" required></textarea>
-                </div>
-                <div class="form-field">
-                  <label for="improvedNote">نکته اصلاح‌شده با هوش مصنوعی</label>
-                  <textarea id="improvedNote" name="improvedNote" dir="auto" lang="en" rows="5" placeholder="نسخه‌ی اصلاح‌شده را اینجا بچسبان…" required></textarea>
-                </div>
-                <button class="button button-primary form-submit" type="submit">
-                  <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
-                  ذخیره‌ی نکته
-                </button>
-              </form>
-            </aside>
-
-            <section class="surface collection-surface note-collection" aria-labelledby="notesListTitle">
+          <div class="notes-layout notes-readonly-layout">
+            <section class="surface collection-surface note-collection" aria-labelledby="sharedNotesTitle">
               <div class="collection-heading">
                 <div>
-                  <h3 id="notesListTitle">نکته‌های ذخیره‌شده</h3>
-                  <p id="notesCountText">یادداشت‌ها به‌ترتیب تازه‌ترین تاریخ نمایش داده می‌شوند.</p>
+                  <h3 id="sharedNotesTitle">نکته‌های ثبت‌شده</h3>
+                  <p>همه‌ی کاربران نسخه‌ی یکسانی می‌بینند؛ ویرایش فقط با تغییر فایل مخزن انجام می‌شود.</p>
                 </div>
-                <span class="note-count-badge" id="noteListCount">۰ نکته</span>
+                <span class="note-count-badge shared-note-badge" id="sharedNoteCount">۰ نکته</span>
               </div>
-              <div id="notesList" class="notes-list" aria-live="polite"></div>
-              <div id="emptyNotes" class="empty-state" hidden>
-                <span class="empty-illustration note-empty-icon" aria-hidden="true">✎</span>
-                <h4>هنوز نکته‌ای ثبت نشده</h4>
-                <p>یادداشت خام و نسخه‌ی اصلاح‌شده را وارد کن تا کنار هم بمانند.</p>
+              <div id="sharedNotesList" class="notes-list" aria-live="polite"></div>
+              <div id="emptySharedNotes" class="empty-state compact-empty" hidden>
+                <span class="empty-illustration note-empty-icon" aria-hidden="true">✦</span>
+                <h4>هنوز نکته‌ای منتشر نشده</h4>
+                <p>مدیران مخزن نکته‌ها را در فایل shared-notes.js اضافه یا ویرایش می‌کنند.</p>
               </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="content-panel" id="userDataPanel" role="tabpanel" aria-labelledby="userDataTab" tabindex="0" hidden>
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">پروفایل محلی</span>
+              <h2>داده‌های کاربر</h2>
+              <p>واژه‌های هر پروفایل جداگانه در همین مرورگر نگهداری می‌شوند.</p>
+            </div>
+          </div>
+          <div class="user-data-layout">
+            <section class="surface profile-card" aria-labelledby="profileTitle">
+              <div class="profile-avatar" id="profileAvatar" aria-hidden="true">ا</div>
+              <label class="profile-select-label" for="userSelect">کاربر فعال</label>
+              <select id="userSelect" class="profile-user-select" aria-describedby="userCreationHint"></select>
+              <span class="section-kicker">شناسه‌ی کاربر</span>
+              <h3 id="profileTitle"><span id="profileName">امیر</span></h3>
+              <code class="profile-code" id="profileCode">AMIR</code>
+              <p id="userCreationHint" class="profile-notice">فهرست کاربران را فقط مدیر مخزن تغییر می‌دهد.</p>
+              <p class="profile-notice">این کد شناسه‌ی محلی است، رمز عبور یا ورود امن نیست. هر کسی می‌تواند آن را ببیند؛ این برنامه داده‌ها را بین دستگاه‌ها همگام نمی‌کند.</p>
+              <div class="profile-stats">
+                <div><strong id="userVocabularyCount">۰</strong><span>واژه‌ی این کاربر</span></div>
+              </div>
+              <button id="clearUserDataButton" class="button button-outline clear-data-button" type="button">پاک‌کردن داده‌های این دستگاه</button>
+            </section>
+            <section class="surface storage-info-card" aria-labelledby="storageInfoTitle">
+              <span class="surface-icon storage-info-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none"><path d="M10 2.5 4 5v4.2c0 3.7 2.55 6.9 6 8.3 3.45-1.4 6-4.6 6-8.3V5l-6-2.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="m7.5 9.9 1.7 1.7 3.4-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </span>
+              <h3 id="storageInfoTitle">داده‌ها کجا ذخیره می‌شوند؟</h3>
+              <p>واژه‌های کاربر <strong id="storageUserCode">AMIR</strong> در فضای محلی مرورگر (localStorage) ذخیره می‌شوند. پاک‌کردن داده‌های سایت یا استفاده از مرورگر یا دستگاه دیگر، این واژه‌ها را منتقل نمی‌کند.</p>
+              <p>یادداشت‌های مشترک از فایل <code>shared-notes.js</code> در مخزن خوانده می‌شوند و برای همه‌ی بازدیدکنندگان یکسان‌اند. برای انتشار یا ویرایش یادداشت مشترک، فایل مخزن باید تغییر کند و دوباره منتشر شود.</p>
+              <div class="storage-badge"><span aria-hidden="true">●</span> بدون حساب یا همگام‌سازی ابری</div>
             </section>
           </div>
         </section>
@@ -267,37 +302,31 @@
 
       <footer class="app-footer">
         <span class="footer-mark" aria-hidden="true">✦</span>
-        <p>دفترچه‌ی شخصی توست؛ اطلاعاتت در همین مرورگر می‌ماند.</p>
-        <span class="footer-static">بدون سرور <span aria-hidden="true">·</span> بدون نیاز به اینترنت</span>
+        <p>هر روز یک واژه‌ی تازه به مسیر یادگیری‌ات اضافه کن.</p>
+        <span class="footer-static">بدون سرور <span aria-hidden="true">·</span> بدون همگام‌سازی ابری</span>
       </footer>
     </div>
 
-    <dialog id="importDialog" class="import-dialog" aria-labelledby="importDialogTitle">
-      <form method="dialog" class="dialog-content">
-        <button id="closeImportDialog" class="dialog-close" type="button" aria-label="بستن پنجره">×</button>
-        <span class="dialog-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none"><path d="M10 12.5v-9m0 0L6.5 7M10 3.5 13.5 7M3.5 13v3.25c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-        </span>
-        <h2 id="importDialogTitle">چطور اطلاعات وارد شود؟</h2>
-        <p id="importSummary" class="import-summary"></p>
-        <fieldset class="import-options">
-          <legend>روش ورود اطلاعات</legend>
-          <label class="import-option">
-            <input type="radio" name="importMode" value="merge" checked>
-            <span class="radio-custom" aria-hidden="true"></span>
-            <span><strong>افزودن به اطلاعات فعلی</strong><small>اطلاعات جدید اضافه می‌شود و موارد تکراری نادیده گرفته می‌شوند.</small></span>
-          </label>
-          <label class="import-option import-option-replace">
-            <input type="radio" name="importMode" value="replace">
-            <span class="radio-custom" aria-hidden="true"></span>
-            <span><strong>جایگزینی همه‌ی اطلاعات</strong><small>اطلاعات فعلی پاک می‌شود و فایل جای آن را می‌گیرد.</small></span>
-          </label>
-        </fieldset>
-        <div class="dialog-actions">
-          <button id="cancelImportButton" class="button button-outline" type="button">انصراف</button>
-          <button id="confirmImportButton" class="button button-primary" type="button">ورود اطلاعات</button>
+    <dialog id="wordDetailDialog" class="word-detail-dialog" aria-labelledby="detailWordTitle">
+      <div class="dialog-content word-dialog-content">
+        <button id="closeWordDetail" class="dialog-close" type="button" aria-label="بستن پنجره">×</button>
+        <div class="detail-header">
+          <span class="section-kicker">واژه‌ی انگلیسی</span>
+          <h2 id="detailWordTitle" dir="ltr" lang="en"></h2>
+          <div class="detail-meta-row">
+            <p id="detailPronunciation" class="detail-pronunciation" dir="ltr" lang="en-fonipa" hidden></p>
+            <button id="detailSpeakButton" class="button button-quiet detail-speak-button" type="button">
+              <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M3.5 8v4h3l4 3V5l-4 3h-3ZM13 7a4.25 4.25 0 0 1 0 6M14.8 4.8a7.35 7.35 0 0 1 0 10.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              شنیدن تلفظ
+            </button>
+            <span id="detailBoxBadge" class="review-box-badge"></span>
+          </div>
+          <button id="deleteWordButton" class="text-button delete-word-button" type="button">حذف این واژه</button>
         </div>
-      </form>
+        <h3 class="detail-meanings-title">همه‌ی معنی‌ها و مثال‌ها</h3>
+        <div id="detailMeanings" class="detail-meanings"></div>
+      </div>
     </dialog>
+
   </body>
 </html>

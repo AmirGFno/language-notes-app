@@ -308,7 +308,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .note-version-improved .note-version-label { color: #46836f; }
 .note-version-label span { width: 6px; height: 6px; border-radius: 50%; background: #aaa7ba; }
 .note-version-improved .note-version-label span { background: #6cbea1; }
-.note-text { margin: 0; color: #555568; font-family: "Roboto Flex", "Inter", "Vazirmatn", sans-serif; font-size: 11px; line-height: 1.9; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+.note-text { margin: 0; color: #555568; font-family: "Roboto Flex", "Inter", "Vazirmatn", sans-serif; font-size: 11px; line-height: 1.9; text-align: start; white-space: pre-wrap; overflow-wrap: anywhere; }
 .notes-tip { max-width: 345px; display: flex; align-items: center; gap: 8px; border: 1px solid #ebe7fc; border-radius: 11px; padding: 8px 12px; background: #fbfaff; color: #77718f; font-size: 10px; }
 .notes-tip > span { color: #9a86e6; font-size: 15px; }
 .note-empty-icon { background: #eaf7f2; color: #46977c; }
@@ -317,6 +317,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .idioms-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .idiom-card { min-width: 0; border: 1px solid #e9e7f2; border-radius: 14px; padding: 15px; background: linear-gradient(145deg, #fff, #fcfbff); }
 .idiom-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+.idiom-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.idiom-register-badge { border: 1px solid #eee5d7; border-radius: 7px; padding: 2px 7px; background: #fffaf1; color: #946b34; font-size: 9px; font-weight: 800; }
 .idiom-phrase { margin: 0; color: #39344f; direction: ltr; font: 750 17px/1.5 "Roboto Flex", "Inter", sans-serif; overflow-wrap: anywhere; }
 .idiom-meaning { margin: 0; color: #514f67; font-size: 12px; font-weight: 700; line-height: 1.9; }
 .idiom-explanation { margin: 6px 0 0; color: #77758a; font-size: 10px; line-height: 1.9; }

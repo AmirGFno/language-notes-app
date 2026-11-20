@@ -186,7 +186,8 @@
       phrase: record.phrase.trim(),
       meaning: record.meaning.trim(),
       explanation: typeof record.explanation === 'string' ? record.explanation.trim() : '',
-      example: typeof record.example === 'string' ? record.example.trim() : ''
+      example: typeof record.example === 'string' ? record.example.trim() : '',
+      register: typeof record.register === 'string' ? record.register.trim() : ''
     };
   }
 
@@ -507,12 +508,14 @@
     content.className = 'note-content-grid';
     const original = document.createElement('section');
     original.className = 'note-version';
-    original.append(elementWithText('div', 'note-version-label', 'نکته‌ی خام'), elementWithText('p', 'note-text', note.originalNote));
+    const originalText = elementWithText('p', 'note-text', note.originalNote);
+    originalText.dir = 'auto';
+    original.append(elementWithText('div', 'note-version-label', 'نکته‌ی خام'), originalText);
     const improved = document.createElement('section');
     improved.className = 'note-version note-version-improved';
-    improved.append(elementWithText('div', 'note-version-label', 'نسخه‌ی اصلاح‌شده'), elementWithText('p', 'note-text', note.improvedNote));
-    original.querySelector('.note-text').dir = 'auto';
-    improved.querySelector('.note-text').dir = 'auto';
+    const improvedText = elementWithText('p', 'note-text', note.improvedNote);
+    improvedText.dir = 'auto';
+    improved.append(elementWithText('div', 'note-version-label', 'نسخه‌ی اصلاح‌شده'), improvedText);
     content.append(original, improved);
     card.append(header, content);
     return card;
@@ -526,7 +529,11 @@
     const phrase = elementWithText('h3', 'idiom-phrase', idiom.phrase);
     phrase.dir = 'ltr';
     phrase.lang = 'en';
-    header.append(phrase, elementWithText('span', 'shared-source-badge', 'عمومی'));
+    const badges = document.createElement('div');
+    badges.className = 'idiom-badges';
+    if (idiom.register) badges.append(elementWithText('span', 'idiom-register-badge', idiom.register));
+    badges.append(elementWithText('span', 'shared-source-badge', 'عمومی'));
+    header.append(phrase, badges);
 
     const meaning = elementWithText('p', 'idiom-meaning', idiom.meaning);
     meaning.dir = 'auto';

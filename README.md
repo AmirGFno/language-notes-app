@@ -59,7 +59,8 @@
   phrase: 'break the ice',
   meaning: 'سر صحبت را باز کردن؛ یخ جمع را شکستن',
   explanation: 'To make people feel more relaxed when they first meet.',
-  example: 'He told a joke to break the ice.'
+  example: 'He told a joke to break the ice.',
+  register: 'محاوره‌ای' // اختیاری: برچسب لحن یا سطح رکاکت
 }
 ```
 

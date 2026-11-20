@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lingua Ledger — Language notebook</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header><div class="shell"><span class="eyebrow">LINGUA LEDGER / PERSONAL STUDY SPACE</span><h1>Your language notebook</h1><p>Collect new words, practice with flashcards, and turn rough notes into clear explanations.</p></div></header>
+  <main class="shell">
+    <nav aria-label="Notebook sections"><a href="#vocabulary">Vocabulary</a><a href="#notes">Notes</a></nav>
+    <p id="storage-status" role="status"></p>
+    <section id="vocabulary" aria-labelledby="vocab-title">
+      <span class="eyebrow">01 / WORD BANK</span><h2 id="vocab-title">Vocabulary</h2>
+      <div class="columns">
+        <form id="word-form" class="panel">
+          <h3>Add a word</h3>
+          <label>Word <input name="word" required maxlength="120"></label>
+          <div id="meaning-fields"></div>
+          <div class="actions"><button type="button" class="secondary" id="add-meaning">+ Add meaning</button><button>Save word</button></div>
+          <p id="word-status" role="status"></p>
+        </form>
+        <div class="panel">
+          <div class="toolbar"><h3>Saved words</h3><button type="button" id="mode" class="secondary" aria-pressed="false">Flashcard mode</button></div>
+          <p id="empty-words">No words yet. Add one to start your collection.</p>
+          <ul id="word-list" class="entries"></ul>
+          <div id="flashcards" hidden>
+            <button type="button" id="card" aria-label="Flip flashcard" aria-pressed="false"><span class="card-inner"><span class="face front" id="front"></span><span class="face back" id="back" aria-hidden="true"></span></span></button>
+            <div class="toolbar"><button type="button" class="secondary" id="previous">Previous</button><span id="position" aria-live="polite"></span><button type="button" class="secondary" id="next">Next</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="notes" aria-labelledby="notes-title">
+      <span class="eyebrow">02 / STUDY JOURNAL</span><h2 id="notes-title">Notes</h2>
+      <div class="columns">
+        <form id="note-form" class="panel">
+          <h3>Write a rough note</h3>
+          <label>Original note <textarea name="note" required maxlength="4000" rows="6" placeholder="Try a grammar rule or a phrase you want to remember…"></textarea></label>
+          <p class="hint">Your note is sent to OpenAI for improvement. Saved entries stay in this browser.</p>
+          <button id="improve">Improve &amp; save</button>
+          <p id="note-status" role="status"></p>
+        </form>
+        <div class="panel"><h3>Saved notes</h3><p id="empty-notes">Improved notes will appear here.</p><ul id="note-list" class="entries"></ul></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

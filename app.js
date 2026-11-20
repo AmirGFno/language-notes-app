@@ -1,9 +1,7 @@
 (() => {
   'use strict';
 
-  const DEFAULT_USER_CODE = 'AMIR';
-  const LEGACY_STORAGE_KEY = 'language-notes-app.data.v1';
-  const ACTIVE_USER_KEY = 'language-notes-app.active-user';
+  const REVIEW_STORAGE_KEY = 'language-notes-app.review.v1';
   const DAY_IN_MS = 24 * 60 * 60 * 1000;
   const LEITNER_INTERVALS = [1, 2, 4, 7, 14];
   const POSITIONS = [
@@ -20,13 +18,7 @@
   ];
 
   const elements = {
-    exportButton: document.getElementById('exportButton'),
     toast: document.getElementById('toast'),
-    wordForm: document.getElementById('wordForm'),
-    wordInput: document.getElementById('wordInput'),
-    pronunciationInput: document.getElementById('pronunciationInput'),
-    meaningFields: document.getElementById('meaningFields'),
-    addMeaningButton: document.getElementById('addMeaningButton'),
     wordSearch: document.getElementById('wordSearch'),
     wordList: document.getElementById('wordList'),
     emptyWords: document.getElementById('emptyWords'),
@@ -35,23 +27,20 @@
     sharedNotesList: document.getElementById('sharedNotesList'),
     emptySharedNotes: document.getElementById('emptySharedNotes'),
     sharedNoteCount: document.getElementById('sharedNoteCount'),
-    profileCode: document.getElementById('profileCode'),
-    storageUserCode: document.getElementById('storageUserCode'),
-    profileName: document.getElementById('profileName'),
-    profileAvatar: document.getElementById('profileAvatar'),
-    userSelect: document.getElementById('userSelect'),
-    userVocabularyCount: document.getElementById('userVocabularyCount'),
-    clearUserDataButton: document.getElementById('clearUserDataButton'),
+    sharedIdiomsList: document.getElementById('sharedIdiomsList'),
+    emptySharedIdioms: document.getElementById('emptySharedIdioms'),
+    sharedIdiomCount: document.getElementById('sharedIdiomCount'),
     vocabularyTotal: document.getElementById('vocabularyTotal'),
     notesTotal: document.getElementById('notesTotal'),
     leitnerTotal: document.getElementById('leitnerTotal'),
     vocabularyTabCount: document.getElementById('vocabularyTabCount'),
     notesTabCount: document.getElementById('notesTabCount'),
+    idiomsTabCount: document.getElementById('idiomsTabCount'),
     leitnerTabCount: document.getElementById('leitnerTabCount'),
     vocabularyPanel: document.getElementById('vocabularyPanel'),
     leitnerPanel: document.getElementById('leitnerPanel'),
     notesPanel: document.getElementById('notesPanel'),
-    userDataPanel: document.getElementById('userDataPanel'),
+    idiomsPanel: document.getElementById('idiomsPanel'),
     leitnerBoxes: document.getElementById('leitnerBoxes'),
     leitnerDueSummary: document.getElementById('leitnerDueSummary'),
     reviewCountText: document.getElementById('reviewCountText'),
@@ -75,66 +64,24 @@
     detailSpeakButton: document.getElementById('detailSpeakButton'),
     detailBoxBadge: document.getElementById('detailBoxBadge'),
     detailMeanings: document.getElementById('detailMeanings'),
-    deleteWordButton: document.getElementById('deleteWordButton'),
     vocabularyTabButton: document.getElementById('vocabularyTab'),
     leitnerTabButton: document.getElementById('leitnerTab'),
     notesTabButton: document.getElementById('notesTab'),
-    userDataTabButton: document.getElementById('userDataTab')
+    idiomsTabButton: document.getElementById('idiomsTab')
   };
 
-  const USERS = loadConfiguredUsers();
   let storageReadFailed = false;
-  let currentUser = getInitialUser();
-  let appData = loadLocalData(currentUser.code);
-  const sharedNotes = loadSharedNotes();
   let toastTimeout = null;
-  let meaningRowId = 0;
   let activeReviewId = null;
   let reviewAnswerRevealed = false;
   let activeWordDetailId = null;
+  const reviewProgress = loadReviewProgress();
+  const appData = { version: 1, vocabulary: loadRepositoryVocabulary(reviewProgress) };
+  const sharedNotes = loadSharedNotes();
+  const sharedIdioms = loadSharedIdioms();
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
-  }
-
-  function loadConfiguredUsers() {
-    const configured = Array.isArray(window.APP_USERS) ? window.APP_USERS : [];
-    const seen = new Set();
-    const users = configured
-      .filter((user) => isObject(user)
-        && typeof user.code === 'string'
-        && /^[A-Z0-9_-]+$/i.test(user.code.trim())
-        && typeof user.nameFa === 'string'
-        && user.nameFa.trim())
-      .map((user) => ({ code: user.code.trim().toUpperCase(), nameFa: user.nameFa.trim() }))
-      .filter((user) => {
-        if (seen.has(user.code)) return false;
-        seen.add(user.code);
-        return true;
-      });
-    return users.length ? users : [{ code: DEFAULT_USER_CODE, nameFa: 'امیر' }];
-  }
-
-  function getInitialUser() {
-    const defaultUser = USERS.find((user) => user.code === DEFAULT_USER_CODE) || USERS[0];
-    try {
-      const savedCode = window.localStorage.getItem(ACTIVE_USER_KEY);
-      return USERS.find((user) => user.code === savedCode) || defaultUser;
-    } catch (error) {
-      storageReadFailed = true;
-      return defaultUser;
-    }
-  }
-
-  function storageKeyFor(userCode) {
-    return `language-notes-app.user.${userCode.toLowerCase()}.v1`;
-  }
-
-  function makeId() {
-    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-      return window.crypto.randomUUID();
-    }
-    return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 11)}`;
   }
 
   function toFaNumber(value) {
@@ -149,38 +96,38 @@
     return validDate(value) ? value : fallback;
   }
 
-  function normalizeWordRecord(record, index, strict = false) {
-    const fail = (message) => {
-      if (strict) throw new Error(`واژه‌ی شماره‌ی ${toFaNumber(index + 1)}: ${message}`);
-      return null;
-    };
+  function loadReviewProgress() {
+    try {
+      const raw = window.localStorage.getItem(REVIEW_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return isObject(parsed) && isObject(parsed.progress) ? parsed.progress : {};
+    } catch (error) {
+      storageReadFailed = true;
+      return {};
+    }
+  }
 
-    if (!isObject(record)) return fail('ساختار واژه درست نیست.');
-    if (typeof record.word !== 'string' || !record.word.trim()) {
-      return fail('فیلد «word» باید متنِ غیرخالی باشد.');
-    }
-    if (!Array.isArray(record.meanings) || record.meanings.length === 0) {
-      return fail('فیلد «meanings» باید دست‌کم یک معنی داشته باشد.');
-    }
-    if (record.pronunciation != null && typeof record.pronunciation !== 'string') {
-      return fail('فیلد «pronunciation» باید متن باشد.');
-    }
+  function stableId(prefix, text, index) {
+    const slug = String(text || '')
+      .trim()
+      .toLocaleLowerCase()
+      .normalize('NFKD')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return `${prefix}-${slug || index + 1}`;
+  }
+
+  function normalizeWordRecord(record, index, progress) {
+    if (!isObject(record) || typeof record.word !== 'string' || !record.word.trim()) return null;
+    if (!Array.isArray(record.meanings) || record.meanings.length === 0) return null;
+    if (record.pronunciation != null && typeof record.pronunciation !== 'string') return null;
 
     const meanings = [];
-    for (let meaningIndex = 0; meaningIndex < record.meanings.length; meaningIndex += 1) {
-      const meaning = record.meanings[meaningIndex];
+    for (const meaning of record.meanings) {
       if (!isObject(meaning)
-        || typeof meaning.partOfSpeech !== 'string'
-        || !meaning.partOfSpeech.trim()
-        || typeof meaning.definition !== 'string'
-        || !meaning.definition.trim()) {
-        return fail(`معنی شماره‌ی ${toFaNumber(meaningIndex + 1)} باید «partOfSpeech» و «definition» داشته باشد.`);
-      }
-      for (const optionalField of ['example', 'explanation']) {
-        if (meaning[optionalField] != null && typeof meaning[optionalField] !== 'string') {
-          return fail(`فیلد «${optionalField}» در معنی باید متن باشد.`);
-        }
-      }
+        || typeof meaning.partOfSpeech !== 'string' || !meaning.partOfSpeech.trim()
+        || typeof meaning.definition !== 'string' || !meaning.definition.trim()) return null;
       meanings.push({
         partOfSpeech: meaning.partOfSpeech.trim(),
         definition: meaning.definition.trim(),
@@ -189,48 +136,57 @@
         isPrimary: meaning.isPrimary === true
       });
     }
-
     const primaryIndex = meanings.findIndex((meaning) => meaning.isPrimary);
     meanings.forEach((meaning, meaningIndex) => {
       meaning.isPrimary = meaningIndex === (primaryIndex < 0 ? 0 : primaryIndex);
     });
 
+    const word = record.word.trim();
+    const id = typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('word', word, index);
+    const savedProgress = isObject(progress[id]) ? progress[id] : {};
     const createdAt = normalizeDate(record.createdAt);
-    const box = Number(record.leitnerBox);
-    const leitnerBox = Number.isInteger(box) && box >= 1 && box <= LEITNER_INTERVALS.length ? box : 1;
-    const nextReviewAt = normalizeDate(record.nextReviewAt, createdAt);
+    const storedBox = Number(savedProgress.leitnerBox);
+    const sourceBox = Number(record.leitnerBox);
+    const leitnerBox = Number.isInteger(storedBox) && storedBox >= 1 && storedBox <= LEITNER_INTERVALS.length
+      ? storedBox
+      : Number.isInteger(sourceBox) && sourceBox >= 1 && sourceBox <= LEITNER_INTERVALS.length ? sourceBox : 1;
 
     return {
-      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : makeId(),
-      word: record.word.trim(),
+      id,
+      word,
       pronunciation: typeof record.pronunciation === 'string' ? record.pronunciation.trim() : '',
       meanings,
       createdAt,
       leitnerBox,
-      nextReviewAt,
-      lastReviewedAt: validDate(record.lastReviewedAt) ? record.lastReviewedAt : null
+      nextReviewAt: normalizeDate(savedProgress.nextReviewAt || record.nextReviewAt, createdAt),
+      lastReviewedAt: validDate(savedProgress.lastReviewedAt)
+        ? savedProgress.lastReviewedAt
+        : validDate(record.lastReviewedAt) ? record.lastReviewedAt : null
     };
   }
 
-  function normalizeNoteRecord(record, index, strict = false) {
-    const fail = (message) => {
-      if (strict) throw new Error(`نکته‌ی شماره‌ی ${toFaNumber(index + 1)}: ${message}`);
-      return null;
-    };
-
-    if (!isObject(record)) return fail('ساختار نکته درست نیست.');
-    if (typeof record.originalNote !== 'string' || !record.originalNote.trim()) {
-      return fail('فیلد «originalNote» باید متنِ غیرخالی باشد.');
-    }
-    if (typeof record.improvedNote !== 'string' || !record.improvedNote.trim()) {
-      return fail('فیلد «improvedNote» باید متنِ غیرخالی باشد.');
-    }
-
+  function normalizeNoteRecord(record, index) {
+    if (!isObject(record)
+      || typeof record.originalNote !== 'string' || !record.originalNote.trim()
+      || typeof record.improvedNote !== 'string' || !record.improvedNote.trim()) return null;
     return {
-      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : makeId(),
+      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('note', record.originalNote, index),
       originalNote: record.originalNote.trim(),
       improvedNote: record.improvedNote.trim(),
       createdAt: normalizeDate(record.createdAt || record.timestamp)
+    };
+  }
+
+  function normalizeIdiomRecord(record, index) {
+    if (!isObject(record)
+      || typeof record.phrase !== 'string' || !record.phrase.trim()
+      || typeof record.meaning !== 'string' || !record.meaning.trim()) return null;
+    return {
+      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('idiom', record.phrase, index),
+      phrase: record.phrase.trim(),
+      meaning: record.meaning.trim(),
+      explanation: typeof record.explanation === 'string' ? record.explanation.trim() : '',
+      example: typeof record.example === 'string' ? record.example.trim() : ''
     };
   }
 
@@ -238,56 +194,45 @@
     const used = new Set();
     return records.map((record) => {
       let id = record.id;
-      while (used.has(id)) id = makeId();
+      let suffix = 2;
+      while (used.has(id)) {
+        id = `${record.id}-${suffix}`;
+        suffix += 1;
+      }
       used.add(id);
       return { ...record, id };
     });
   }
 
+  function loadRepositoryVocabulary(progress) {
+    const records = Array.isArray(window.REPOSITORY_VOCABULARY) ? window.REPOSITORY_VOCABULARY : [];
+    return withUniqueIds(records.map((word, index) => normalizeWordRecord(word, index, progress)).filter(Boolean));
+  }
+
   function loadSharedNotes() {
     const records = Array.isArray(window.REPOSITORY_NOTES) ? window.REPOSITORY_NOTES : [];
-    return withUniqueIds(records.map((note, index) => normalizeNoteRecord(note, index)).filter(Boolean));
+    return withUniqueIds(records.map(normalizeNoteRecord).filter(Boolean));
   }
 
-  function loadLocalData(userCode) {
-    try {
-      const profileKey = storageKeyFor(userCode);
-      const profileData = window.localStorage.getItem(profileKey);
-      const isLegacyData = !profileData && userCode === DEFAULT_USER_CODE;
-      const raw = profileData || (isLegacyData ? window.localStorage.getItem(LEGACY_STORAGE_KEY) : null);
-      if (!raw) return { version: 3, vocabulary: [] };
-      const stored = JSON.parse(raw);
-      if (!isObject(stored)) throw new Error('ساختار داده‌های ذخیره‌شده درست نیست.');
-      const vocabulary = Array.isArray(stored.vocabulary)
-        ? stored.vocabulary.map((word, index) => normalizeWordRecord(word, index)).filter(Boolean)
-        : [];
-      const data = { version: 3, vocabulary: withUniqueIds(vocabulary) };
-      if (isLegacyData && raw) {
-        try {
-          window.localStorage.setItem(profileKey, JSON.stringify({ ...data, userCode }));
-          window.localStorage.removeItem(LEGACY_STORAGE_KEY);
-        } catch (error) {
-          // Keep the legacy copy intact if the browser cannot migrate it now.
-        }
-      }
-      return data;
-    } catch (error) {
-      storageReadFailed = true;
-      return { version: 3, vocabulary: [] };
-    }
+  function loadSharedIdioms() {
+    const records = Array.isArray(window.REPOSITORY_IDIOMS) ? window.REPOSITORY_IDIOMS : [];
+    return withUniqueIds(records.map(normalizeIdiomRecord).filter(Boolean));
   }
 
-  function saveLocalData() {
+  function saveReviewProgress() {
     try {
-      window.localStorage.setItem(storageKeyFor(currentUser.code), JSON.stringify({
-        version: 3,
-        userCode: currentUser.code,
-        vocabulary: appData.vocabulary
-      }));
-      if (currentUser.code === DEFAULT_USER_CODE) window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      const progress = {};
+      appData.vocabulary.forEach((word) => {
+        progress[word.id] = {
+          leitnerBox: word.leitnerBox,
+          nextReviewAt: word.nextReviewAt,
+          lastReviewedAt: word.lastReviewedAt
+        };
+      });
+      window.localStorage.setItem(REVIEW_STORAGE_KEY, JSON.stringify({ version: 1, progress }));
       return true;
     } catch (error) {
-      showToast('ذخیره‌سازی در این مرورگر انجام نشد؛ فضای ذخیره‌سازی را بررسی کن.', 'error');
+      showToast('ذخیره‌ی پیشرفت مرور در این مرورگر انجام نشد.', 'error');
       return false;
     }
   }
@@ -302,13 +247,6 @@
     }, 5000);
   }
 
-  function persistAndRender(successMessage) {
-    const saved = saveLocalData();
-    renderAll();
-    if (saved && successMessage) showToast(successMessage);
-    return saved;
-  }
-
   function elementWithText(tagName, className, text) {
     const element = document.createElement(tagName);
     if (className) element.className = className;
@@ -316,117 +254,8 @@
     return element;
   }
 
-  function createField(labelText, control) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'form-field';
-    const label = document.createElement('label');
-    label.htmlFor = control.id;
-    label.textContent = labelText;
-    wrapper.append(label, control);
-    return wrapper;
-  }
-
-  function createMeaningRow() {
-    const row = document.createElement('div');
-    row.className = 'meaning-row';
-    row.dataset.rowId = String(meaningRowId);
-
-    const primaryWrap = document.createElement('div');
-    primaryWrap.className = 'meaning-primary-choice';
-    const primaryRadio = document.createElement('input');
-    primaryRadio.type = 'radio';
-    primaryRadio.name = 'primaryMeaning';
-    primaryRadio.value = String(meaningRowId);
-    primaryRadio.id = `primary-meaning-${meaningRowId}`;
-    const primaryLabel = document.createElement('label');
-    primaryLabel.htmlFor = primaryRadio.id;
-    primaryLabel.textContent = 'معنی پرکاربردتر';
-    primaryWrap.append(primaryRadio, primaryLabel);
-
-    const inputs = document.createElement('div');
-    inputs.className = 'meaning-inputs';
-
-    const select = document.createElement('select');
-    select.id = `part-of-speech-${meaningRowId}`;
-    select.name = 'partOfSpeech';
-    select.required = true;
-    const prompt = document.createElement('option');
-    prompt.value = '';
-    prompt.textContent = 'انتخاب نوع کلمه';
-    prompt.selected = true;
-    select.append(prompt);
-    POSITIONS.forEach((position) => {
-      const option = document.createElement('option');
-      option.value = position.value;
-      option.textContent = position.label;
-      select.append(option);
-    });
-
-    const definition = document.createElement('input');
-    definition.id = `definition-${meaningRowId}`;
-    definition.name = 'definition';
-    definition.type = 'text';
-    definition.dir = 'auto';
-    definition.autocomplete = 'off';
-    definition.placeholder = 'مثلاً: شادی یا a feeling of joy';
-    definition.required = true;
-
-    const example = document.createElement('input');
-    example.id = `example-${meaningRowId}`;
-    example.name = 'example';
-    example.type = 'text';
-    example.dir = 'auto';
-    example.lang = 'en';
-    example.autocomplete = 'off';
-    example.placeholder = 'مثلاً: She was curious about the result.';
-
-    const explanation = document.createElement('textarea');
-    explanation.id = `explanation-${meaningRowId}`;
-    explanation.name = 'explanation';
-    explanation.dir = 'auto';
-    explanation.rows = 2;
-    explanation.placeholder = 'توضیح یا نکته‌ی کاربردی (اختیاری)';
-
-    inputs.append(
-      createField('نوع کلمه (Part of Speech)', select),
-      createField('معنی', definition),
-      createField('مثال انگلیسی (اختیاری)', example),
-      createField('توضیحات (اختیاری)', explanation)
-    );
-
-    const removeButton = document.createElement('button');
-    removeButton.className = 'remove-meaning-button';
-    removeButton.type = 'button';
-    removeButton.textContent = '×';
-    removeButton.setAttribute('aria-label', 'حذف این معنی');
-    removeButton.addEventListener('click', () => {
-      row.remove();
-      updateMeaningRows();
-    });
-
-    row.append(primaryWrap, inputs, removeButton);
-    meaningRowId += 1;
-    return row;
-  }
-
-  function updateMeaningRows() {
-    const rows = Array.from(elements.meaningFields.querySelectorAll('.meaning-row'));
-    if (!rows.some((row) => row.querySelector('input[name="primaryMeaning"]').checked) && rows[0]) {
-      rows[0].querySelector('input[name="primaryMeaning"]').checked = true;
-    }
-    rows.forEach((row) => {
-      const removeButton = row.querySelector('.remove-meaning-button');
-      removeButton.disabled = rows.length <= 1;
-      removeButton.title = rows.length <= 1 ? 'برای واژه دست‌کم یک معنی لازم است' : 'حذف این معنی';
-    });
-  }
-
-  function meaningKey(meaning) {
-    return `${meaning.partOfSpeech.trim().toLocaleLowerCase()}\u0000${meaning.definition.trim().toLocaleLowerCase()}`;
-  }
-
-  function wordKey(word) {
-    return word.trim().toLocaleLowerCase();
+  function toStableAlphabeticalOrder(records, field) {
+    return records.slice().sort((first, second) => first[field].localeCompare(second[field], 'en'));
   }
 
   function getPartOfSpeechLabel(value) {
@@ -438,19 +267,9 @@
     return word.meanings.find((meaning) => meaning.isPrimary) || word.meanings[0];
   }
 
-  function makeDeleteButton(label, title) {
-    const button = document.createElement('button');
-    button.className = 'icon-button';
-    button.type = 'button';
-    button.textContent = '×';
-    button.setAttribute('aria-label', label);
-    button.title = title;
-    return button;
-  }
-
   function getFilteredVocabulary() {
     const query = elements.wordSearch.value.trim().toLocaleLowerCase();
-    if (!query) return appData.vocabulary.slice();
+    if (!query) return toStableAlphabeticalOrder(appData.vocabulary, 'word');
     return appData.vocabulary.filter((entry) => {
       const searchable = [
         entry.word,
@@ -458,7 +277,7 @@
         ...entry.meanings.flatMap((meaning) => [meaning.partOfSpeech, meaning.definition, meaning.example, meaning.explanation])
       ].join(' ').toLocaleLowerCase();
       return searchable.includes(query);
-    });
+    }).sort((first, second) => first.word.localeCompare(second.word, 'en'));
   }
 
   function speakWord(word) {
@@ -500,12 +319,12 @@
     const primary = getPrimaryMeaning(entry);
     const preview = document.createElement('span');
     preview.className = 'word-tile-preview';
-    const position = elementWithText('span', 'pos-badge', getPartOfSpeechLabel(primary.partOfSpeech));
-    const definition = elementWithText('span', 'word-tile-definition', primary.definition);
-    definition.dir = 'auto';
-    preview.append(position, definition);
-    openButton.append(preview);
-    openButton.append(elementWithText('span', 'word-tile-action', 'همه‌ی معنی‌ها'));
+    preview.append(
+      elementWithText('span', 'pos-badge', getPartOfSpeechLabel(primary.partOfSpeech)),
+      elementWithText('span', 'word-tile-definition', primary.definition)
+    );
+    preview.lastElementChild.dir = 'auto';
+    openButton.append(preview, elementWithText('span', 'word-tile-action', 'همه‌ی معنی‌ها'));
 
     const speakButton = document.createElement('button');
     speakButton.className = 'tile-speak-button';
@@ -521,7 +340,7 @@
 
   function renderWordList() {
     const words = getFilteredVocabulary();
-    elements.wordList.replaceChildren(...words.slice().reverse().map(renderWordTile));
+    elements.wordList.replaceChildren(...words.map(renderWordTile));
 
     const hasVocabulary = appData.vocabulary.length > 0;
     const hasMatches = words.length > 0;
@@ -530,11 +349,11 @@
     elements.wordList.hidden = !hasMatches;
 
     if (!hasVocabulary) {
-      elements.wordCountText.textContent = 'هنوز واژه‌ای ثبت نشده است.';
+      elements.wordCountText.textContent = 'هنوز واژه‌ی عمومی در مخزن ثبت نشده است.';
     } else if (elements.wordSearch.value.trim()) {
       elements.wordCountText.textContent = `نمایش ${toFaNumber(words.length)} از ${toFaNumber(appData.vocabulary.length)} واژه`;
     } else {
-      elements.wordCountText.textContent = `${toFaNumber(appData.vocabulary.length)} واژه در دفترچه‌ی تو`;
+      elements.wordCountText.textContent = `${toFaNumber(appData.vocabulary.length)} واژه‌ی عمومی`;
     }
   }
 
@@ -600,15 +419,12 @@
     const now = Date.now();
     return appData.vocabulary
       .filter((entry) => Date.parse(entry.nextReviewAt) <= now)
-      .sort((a, b) => Date.parse(a.nextReviewAt) - Date.parse(b.nextReviewAt));
+      .sort((first, second) => Date.parse(first.nextReviewAt) - Date.parse(second.nextReviewAt));
   }
 
   function formatDate(value) {
     try {
-      return new Intl.DateTimeFormat('fa-IR', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date(value));
+      return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
     } catch (error) {
       return new Date(value).toLocaleString('fa-IR');
     }
@@ -644,16 +460,14 @@
       elements.emptyReview.hidden = false;
       elements.reviewCountText.textContent = 'واژه‌های موعددار در این بخش نمایش داده می‌شوند.';
       if (appData.vocabulary.length === 0) {
-        elements.emptyReviewTitle.textContent = 'هنوز واژه‌ای برای مرور نداری';
-        elements.emptyReviewText.textContent = 'اول چند واژه به دفترچه اضافه کن تا در جعبه‌ی اول قرار بگیرند.';
+        elements.emptyReviewTitle.textContent = 'واژه‌ای برای مرور وجود ندارد';
+        elements.emptyReviewText.textContent = 'واژه‌های عمومی پس از ثبت در مخزن در این بخش نمایش داده می‌شوند.';
       } else {
         const nextWord = appData.vocabulary
           .slice()
-          .sort((a, b) => Date.parse(a.nextReviewAt) - Date.parse(b.nextReviewAt))[0];
+          .sort((first, second) => Date.parse(first.nextReviewAt) - Date.parse(second.nextReviewAt))[0];
         elements.emptyReviewTitle.textContent = 'مرور امروز تمام شد!';
-        elements.emptyReviewText.textContent = nextWord
-          ? `مرور بعدی: ${formatDate(nextWord.nextReviewAt)}`
-          : 'واژه‌ی موعدداری برای مرور باقی نمانده است.';
+        elements.emptyReviewText.textContent = nextWord ? `مرور بعدی: ${formatDate(nextWord.nextReviewAt)}` : 'واژه‌ای برای مرور باقی نمانده است.';
       }
       return;
     }
@@ -680,86 +494,79 @@
   function renderNoteCard(note) {
     const card = document.createElement('article');
     card.className = 'note-card';
-
     const header = document.createElement('div');
     header.className = 'note-card-header';
     const date = document.createElement('time');
     date.className = 'note-date';
     date.dateTime = note.createdAt;
-    date.setAttribute('aria-label', `تاریخ و ساعت ثبت: ${formatDate(note.createdAt)}`);
-
-    const calendarIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    calendarIcon.setAttribute('viewBox', '0 0 20 20');
-    calendarIcon.setAttribute('fill', 'none');
-    calendarIcon.setAttribute('aria-hidden', 'true');
-    const calendarPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    calendarPath.setAttribute('d', 'M5 4.5h10c.55 0 1 .45 1 1v9c0 .55-.45 1-1 1H5c-.55 0-1-.45-1-1v-9c0-.55.45-1 1-1ZM7 3v3M13 3v3M4 8h12');
-    calendarPath.setAttribute('stroke', 'currentColor');
-    calendarPath.setAttribute('stroke-width', '1.4');
-    calendarPath.setAttribute('stroke-linecap', 'round');
-    calendarPath.setAttribute('stroke-linejoin', 'round');
-    calendarIcon.append(calendarPath);
-    date.append(calendarIcon, document.createTextNode(`ثبت در ${formatDate(note.createdAt)}`));
-
-    header.append(date, elementWithText('span', 'shared-source-badge', 'مشترک'));
+    date.setAttribute('aria-label', `تاریخ ثبت: ${formatDate(note.createdAt)}`);
+    date.textContent = `ثبت در ${formatDate(note.createdAt)}`;
+    header.append(date, elementWithText('span', 'shared-source-badge', 'عمومی'));
 
     const content = document.createElement('div');
     content.className = 'note-content-grid';
     const original = document.createElement('section');
     original.className = 'note-version';
-    original.append(
-      elementWithText('div', 'note-version-label', 'نکته خام'),
-      elementWithText('p', 'note-text', note.originalNote)
-    );
+    original.append(elementWithText('div', 'note-version-label', 'نکته‌ی خام'), elementWithText('p', 'note-text', note.originalNote));
     const improved = document.createElement('section');
     improved.className = 'note-version note-version-improved';
-    improved.append(
-      elementWithText('div', 'note-version-label', 'نسخه‌ی اصلاح‌شده'),
-      elementWithText('p', 'note-text', note.improvedNote)
-    );
+    improved.append(elementWithText('div', 'note-version-label', 'نسخه‌ی اصلاح‌شده'), elementWithText('p', 'note-text', note.improvedNote));
     original.querySelector('.note-text').dir = 'auto';
     improved.querySelector('.note-text').dir = 'auto';
-    original.querySelector('.note-text').lang = 'en';
-    improved.querySelector('.note-text').lang = 'en';
-    original.querySelector('.note-version-label').prepend(elementWithText('span', '', ''));
-    improved.querySelector('.note-version-label').prepend(elementWithText('span', '', ''));
     content.append(original, improved);
     card.append(header, content);
     return card;
   }
 
-  function renderNotes() {
-    const orderedSharedNotes = sharedNotes.slice().sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
-    elements.sharedNotesList.replaceChildren(...orderedSharedNotes.map((note) => renderNoteCard(note)));
-    elements.sharedNotesList.hidden = orderedSharedNotes.length === 0;
-    elements.emptySharedNotes.hidden = orderedSharedNotes.length > 0;
-    elements.sharedNoteCount.textContent = `${toFaNumber(orderedSharedNotes.length)} نکته`;
+  function renderIdiomCard(idiom) {
+    const card = document.createElement('article');
+    card.className = 'idiom-card';
+    const header = document.createElement('div');
+    header.className = 'idiom-card-heading';
+    const phrase = elementWithText('h3', 'idiom-phrase', idiom.phrase);
+    phrase.dir = 'ltr';
+    phrase.lang = 'en';
+    header.append(phrase, elementWithText('span', 'shared-source-badge', 'عمومی'));
+
+    const meaning = elementWithText('p', 'idiom-meaning', idiom.meaning);
+    meaning.dir = 'auto';
+    card.append(header, meaning);
+    if (idiom.explanation) {
+      const explanation = elementWithText('p', 'idiom-explanation', idiom.explanation);
+      explanation.dir = 'auto';
+      card.append(explanation);
+    }
+    if (idiom.example) {
+      const example = elementWithText('p', 'idiom-example', idiom.example);
+      example.dir = 'ltr';
+      example.lang = 'en';
+      card.append(example);
+    }
+    return card;
   }
 
-  function renderUserData() {
-    if (elements.userSelect.options.length !== USERS.length) {
-      elements.userSelect.replaceChildren(...USERS.map((user) => {
-        const option = document.createElement('option');
-        option.value = user.code;
-        option.textContent = `${user.nameFa} (${user.code})`;
-        return option;
-      }));
-    }
-    elements.userSelect.value = currentUser.code;
-    elements.userSelect.disabled = USERS.length <= 1;
-    elements.profileName.textContent = currentUser.nameFa;
-    elements.profileAvatar.textContent = currentUser.nameFa.slice(0, 1);
-    elements.profileCode.textContent = currentUser.code;
-    elements.storageUserCode.textContent = currentUser.code;
-    elements.userVocabularyCount.textContent = toFaNumber(appData.vocabulary.length);
+  function renderNotes() {
+    const orderedNotes = sharedNotes.slice().sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt));
+    elements.sharedNotesList.replaceChildren(...orderedNotes.map(renderNoteCard));
+    elements.sharedNotesList.hidden = orderedNotes.length === 0;
+    elements.emptySharedNotes.hidden = orderedNotes.length > 0;
+    elements.sharedNoteCount.textContent = `${toFaNumber(orderedNotes.length)} نکته`;
+  }
+
+  function renderIdioms() {
+    const orderedIdioms = toStableAlphabeticalOrder(sharedIdioms, 'phrase');
+    elements.sharedIdiomsList.replaceChildren(...orderedIdioms.map(renderIdiomCard));
+    elements.sharedIdiomsList.hidden = orderedIdioms.length === 0;
+    elements.emptySharedIdioms.hidden = orderedIdioms.length > 0;
+    elements.sharedIdiomCount.textContent = `${toFaNumber(orderedIdioms.length)} اصطلاح`;
   }
 
   function renderCounts() {
-    const totalNotes = sharedNotes.length;
     elements.vocabularyTotal.textContent = toFaNumber(appData.vocabulary.length);
-    elements.notesTotal.textContent = toFaNumber(totalNotes);
+    elements.notesTotal.textContent = toFaNumber(sharedNotes.length + sharedIdioms.length);
     elements.vocabularyTabCount.textContent = toFaNumber(appData.vocabulary.length);
-    elements.notesTabCount.textContent = toFaNumber(totalNotes);
+    elements.notesTabCount.textContent = toFaNumber(sharedNotes.length);
+    elements.idiomsTabCount.textContent = toFaNumber(sharedIdioms.length);
   }
 
   function renderAll() {
@@ -767,7 +574,7 @@
     renderWordList();
     renderLeitner();
     renderNotes();
-    renderUserData();
+    renderIdioms();
   }
 
   function setActiveTab(tabName, focus = false) {
@@ -775,8 +582,10 @@
       { name: 'vocabulary', button: elements.vocabularyTabButton, panel: elements.vocabularyPanel },
       { name: 'leitner', button: elements.leitnerTabButton, panel: elements.leitnerPanel },
       { name: 'notes', button: elements.notesTabButton, panel: elements.notesPanel },
-      { name: 'userData', button: elements.userDataTabButton, panel: elements.userDataPanel }
+      { name: 'idioms', button: elements.idiomsTabButton, panel: elements.idiomsPanel }
     ];
+    const selected = tabs.find((tab) => tab.name === tabName);
+    if (!selected) return;
     tabs.forEach(({ name, button, panel }) => {
       const active = name === tabName;
       button.classList.toggle('is-active', active);
@@ -784,136 +593,50 @@
       button.tabIndex = active ? 0 : -1;
       panel.hidden = !active;
     });
-    if (focus) tabs.find((tab) => tab.name === tabName).button.focus();
-  }
-
-  function exportData() {
-    const exportObject = {
-      version: 3,
-      userCode: currentUser.code,
-      userNameFa: currentUser.nameFa,
-      exportedAt: new Date().toISOString(),
-      vocabulary: appData.vocabulary
-    };
-    const blob = new Blob([JSON.stringify(exportObject, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `language-notes-${currentUser.code.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('نسخه‌ی پشتیبان داده‌های شخصی دانلود شد. این فایل در برنامه دوباره وارد نمی‌شود.');
-  }
-
-  function renderAllAfterWordChange(message) {
-    activeReviewId = null;
-    reviewAnswerRevealed = false;
-    persistAndRender(message);
+    if (focus) selected.button.focus();
   }
 
   function markCurrentWord(remembered) {
     const entry = appData.vocabulary.find((word) => word.id === activeReviewId);
     if (!entry) return;
     const now = new Date();
-    if (remembered) {
-      entry.leitnerBox = Math.min(LEITNER_INTERVALS.length, entry.leitnerBox + 1);
-    } else {
-      entry.leitnerBox = 1;
-    }
+    entry.leitnerBox = remembered ? Math.min(LEITNER_INTERVALS.length, entry.leitnerBox + 1) : 1;
     entry.lastReviewedAt = now.toISOString();
     entry.nextReviewAt = new Date(now.getTime() + LEITNER_INTERVALS[entry.leitnerBox - 1] * DAY_IN_MS).toISOString();
     activeReviewId = null;
     reviewAnswerRevealed = false;
-    persistAndRender(remembered
-      ? `آفرین! واژه به جعبه‌ی ${toFaNumber(entry.leitnerBox)} رفت.`
-      : 'واژه برای مرور دوباره به جعبه‌ی اول برگشت.');
+    const saved = saveReviewProgress();
+    renderAll();
+    if (saved) showToast(remembered
+      ? `آفرین! واژه به جعبه‌ی ${toFaNumber(entry.leitnerBox)} رفت؛ پیشرفت مرور در همین مرورگر ذخیره شد.`
+      : 'واژه برای مرور دوباره به جعبه‌ی اول برگشت؛ پیشرفت فقط در همین مرورگر ذخیره می‌شود.');
   }
 
-  function renderDateLabel(value) {
-    return formatDate(value);
-  }
-
-  function renderMeaningRowsFromForm() {
-    return Array.from(elements.meaningFields.querySelectorAll('.meaning-row')).map((row) => ({
-      partOfSpeech: row.querySelector('select[name="partOfSpeech"]').value.trim(),
-      definition: row.querySelector('input[name="definition"]').value.trim(),
-      example: row.querySelector('input[name="example"]').value.trim(),
-      explanation: row.querySelector('textarea[name="explanation"]').value.trim(),
-      isPrimary: row.querySelector('input[name="primaryMeaning"]').checked
-    }));
-  }
-
-  elements.meaningFields.append(createMeaningRow());
-  updateMeaningRows();
   renderAll();
 
-  elements.addMeaningButton.addEventListener('click', () => {
-    const row = createMeaningRow();
-    elements.meaningFields.append(row);
-    updateMeaningRows();
-    row.querySelector('select').focus();
-  });
-
-  elements.wordForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const word = elements.wordInput.value.trim();
-    const pronunciation = elements.pronunciationInput.value.trim();
-    const meanings = renderMeaningRowsFromForm();
-    if (!word || meanings.some((meaning) => !meaning.partOfSpeech || !meaning.definition)) {
-      showToast('کلمه، نوع کلمه و معنی را کامل کن.', 'error');
-      return;
-    }
-    if (!meanings.some((meaning) => meaning.isPrimary)) meanings[0].isPrimary = true;
-
-    const existing = appData.vocabulary.find((entry) => wordKey(entry.word) === wordKey(word));
-    if (existing) {
-      if (!existing.pronunciation && pronunciation) existing.pronunciation = pronunciation;
-      const selectedPrimary = meanings.find((meaning) => meaning.isPrimary);
-      let selectedPrimaryTarget = null;
-      meanings.forEach((meaning) => {
-        const matching = existing.meanings.find((current) => meaningKey(current) === meaningKey(meaning));
-        if (matching) {
-          if (!matching.example && meaning.example) matching.example = meaning.example;
-          if (!matching.explanation && meaning.explanation) matching.explanation = meaning.explanation;
-          if (meaning === selectedPrimary) selectedPrimaryTarget = matching;
-          return;
-        }
-        const copy = { ...meaning };
-        existing.meanings.push(copy);
-        if (meaning === selectedPrimary) selectedPrimaryTarget = copy;
-      });
-      if (selectedPrimaryTarget) {
-        existing.meanings.forEach((meaning) => { meaning.isPrimary = meaning === selectedPrimaryTarget; });
-      } else if (!existing.meanings.some((meaning) => meaning.isPrimary)) {
-        existing.meanings[0].isPrimary = true;
+  const tabButtons = [
+    elements.vocabularyTabButton,
+    elements.leitnerTabButton,
+    elements.notesTabButton,
+    elements.idiomsTabButton
+  ];
+  const tabNames = ['vocabulary', 'leitner', 'notes', 'idioms'];
+  tabButtons.forEach((button, index) => {
+    button.addEventListener('click', () => setActiveTab(tabNames[index]));
+    button.addEventListener('keydown', (event) => {
+      let nextIndex = index;
+      if (event.key === 'ArrowLeft') nextIndex = (index + 1) % tabButtons.length;
+      if (event.key === 'ArrowRight') nextIndex = (index + tabButtons.length - 1) % tabButtons.length;
+      if (event.key === 'Home') nextIndex = 0;
+      if (event.key === 'End') nextIndex = tabButtons.length - 1;
+      if (nextIndex !== index) {
+        event.preventDefault();
+        setActiveTab(tabNames[nextIndex], true);
       }
-    } else {
-      appData.vocabulary.push({
-        id: makeId(),
-        word,
-        pronunciation,
-        meanings,
-        createdAt: new Date().toISOString(),
-        leitnerBox: 1,
-        nextReviewAt: new Date().toISOString(),
-        lastReviewedAt: null
-      });
-    }
-
-    elements.wordForm.reset();
-    elements.meaningFields.replaceChildren(createMeaningRow());
-    updateMeaningRows();
-    elements.wordSearch.value = '';
-    const message = existing
-      ? `واژه‌ی «${existing.word}» و معنی‌هایش به‌روزرسانی شد.`
-      : 'واژه‌ی تازه ذخیره شد و در جعبه‌ی اول قرار گرفت.';
-    renderAllAfterWordChange(message);
+    });
   });
 
   elements.wordSearch.addEventListener('input', renderWordList);
-
   elements.revealAnswerButton.addEventListener('click', () => {
     reviewAnswerRevealed = true;
     renderLeitner();
@@ -924,21 +647,6 @@
     const entry = appData.vocabulary.find((word) => word.id === activeReviewId);
     if (entry) speakWord(entry.word);
   });
-
-  elements.wordList.addEventListener('click', (event) => {
-    const target = event.target.closest('.word-tile-open, .tile-speak-button');
-    if (!target) return;
-    const tile = target.closest('.word-tile');
-    const wordIndex = Array.from(elements.wordList.children).indexOf(tile);
-    const entry = getFilteredVocabulary().slice().reverse()[wordIndex];
-    if (!entry) return;
-    if (target.classList.contains('tile-speak-button')) {
-      speakWord(entry.word);
-    } else {
-      openWordDetail(entry.id);
-    }
-  });
-
   elements.detailSpeakButton.addEventListener('click', () => {
     const entry = appData.vocabulary.find((word) => word.id === activeWordDetailId);
     if (entry) speakWord(entry.word);
@@ -947,68 +655,8 @@
   elements.wordDetailDialog.addEventListener('close', () => {
     activeWordDetailId = null;
   });
-  elements.deleteWordButton.addEventListener('click', () => {
-    const entry = appData.vocabulary.find((word) => word.id === activeWordDetailId);
-    if (!entry || !window.confirm(`واژه‌ی «${entry.word}» و تمام معنی‌هایش حذف شود؟`)) return;
-    appData.vocabulary = appData.vocabulary.filter((word) => word.id !== entry.id);
-    elements.wordDetailDialog.close();
-    activeWordDetailId = null;
-    renderAllAfterWordChange('واژه از دفترچه حذف شد.');
-  });
-
-  elements.exportButton.addEventListener('click', exportData);
-  elements.userSelect.addEventListener('change', () => {
-    const nextUser = USERS.find((user) => user.code === elements.userSelect.value);
-    if (!nextUser || nextUser.code === currentUser.code) return;
-    try {
-      window.localStorage.setItem(ACTIVE_USER_KEY, nextUser.code);
-    } catch (error) {
-      showToast('انتخاب کاربر در این مرورگر ذخیره نشد.', 'error');
-      return;
-    }
-    currentUser = nextUser;
-    appData = loadLocalData(currentUser.code);
-    activeReviewId = null;
-    reviewAnswerRevealed = false;
-    elements.wordForm.reset();
-    elements.meaningFields.replaceChildren(createMeaningRow());
-    updateMeaningRows();
-    elements.wordSearch.value = '';
-    renderAll();
-    showToast(`پروفایل ${currentUser.nameFa} فعال شد؛ داده‌ها از حافظه‌ی محلی همین مرورگر خوانده شدند.`);
-  });
-  elements.clearUserDataButton.addEventListener('click', () => {
-    if (!window.confirm(`داده‌های شخصی پروفایل ${currentUser.nameFa} (${currentUser.code}) از این دستگاه پاک شود؟`)) return;
-    appData = { version: 3, vocabulary: [] };
-    activeReviewId = null;
-    reviewAnswerRevealed = false;
-    persistAndRender('واژه‌های این دستگاه پاک شدند؛ نکته‌های مشترک تغییری نکردند.');
-  });
-
-  const tabButtons = [
-    elements.vocabularyTabButton,
-    elements.leitnerTabButton,
-    elements.notesTabButton,
-    elements.userDataTabButton
-  ];
-  const tabNames = ['vocabulary', 'leitner', 'notes', 'userData'];
-  tabButtons.forEach((button) => {
-    button.addEventListener('click', () => setActiveTab(tabNames[tabButtons.indexOf(button)]));
-    button.addEventListener('keydown', (event) => {
-      const currentIndex = tabButtons.indexOf(button);
-      let nextIndex = currentIndex;
-      if (event.key === 'ArrowLeft') nextIndex = (currentIndex + 1) % tabButtons.length;
-      if (event.key === 'ArrowRight') nextIndex = (currentIndex + tabButtons.length - 1) % tabButtons.length;
-      if (event.key === 'Home') nextIndex = 0;
-      if (event.key === 'End') nextIndex = tabButtons.length - 1;
-      if (nextIndex !== currentIndex) {
-        event.preventDefault();
-        setActiveTab(tabNames[nextIndex], true);
-      }
-    });
-  });
 
   if (storageReadFailed) {
-    showToast('اطلاعات ذخیره‌شده خوانده نشد؛ شاید داده‌ی مرورگر آسیب دیده باشد.', 'error');
+    showToast('پیشرفت ذخیره‌شده‌ی مرور خوانده نشد؛ واژه‌های عمومی همچنان در دسترس‌اند.', 'error');
   }
 })();

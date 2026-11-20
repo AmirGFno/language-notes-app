@@ -167,13 +167,34 @@
 
   function normalizeNoteRecord(record, index) {
     if (!isObject(record)
-      || typeof record.originalNote !== 'string' || !record.originalNote.trim()
-      || typeof record.improvedNote !== 'string' || !record.improvedNote.trim()) return null;
+      || typeof record.title !== 'string' || !record.title.trim()
+      || typeof record.intro !== 'string' || !record.intro.trim()
+      || !Array.isArray(record.sections)) return null;
+
+    const sections = record.sections.map((section) => {
+      if (!isObject(section) || typeof section.title !== 'string' || !section.title.trim()
+        || typeof section.text !== 'string' || !section.text.trim()) return null;
+      const examples = Array.isArray(section.examples)
+        ? section.examples.map((example) => {
+          if (!isObject(example) || typeof example.english !== 'string' || !example.english.trim()
+            || typeof example.persian !== 'string' || !example.persian.trim()) return null;
+          return {
+            english: example.english.trim(),
+            persian: example.persian.trim(),
+            correct: typeof example.correct === 'boolean' ? example.correct : null
+          };
+        }).filter(Boolean)
+        : [];
+      return { title: section.title.trim(), text: section.text.trim(), examples };
+    }).filter(Boolean);
+
+    if (sections.length === 0) return null;
     return {
-      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('note', record.originalNote, index),
-      originalNote: record.originalNote.trim(),
-      improvedNote: record.improvedNote.trim(),
-      createdAt: normalizeDate(record.createdAt || record.timestamp)
+      id: typeof record.id === 'string' && record.id.trim() ? record.id.trim() : stableId('note', record.title, index),
+      title: record.title.trim(),
+      intro: record.intro.trim(),
+      sections,
+      takeaway: typeof record.takeaway === 'string' ? record.takeaway.trim() : ''
     };
   }
 
@@ -350,11 +371,11 @@
     elements.wordList.hidden = !hasMatches;
 
     if (!hasVocabulary) {
-      elements.wordCountText.textContent = 'هنوز واژه‌ی عمومی در مخزن ثبت نشده است.';
+      elements.wordCountText.textContent = 'هنوز واژه‌ای در مخزن ثبت نشده است.';
     } else if (elements.wordSearch.value.trim()) {
       elements.wordCountText.textContent = `نمایش ${toFaNumber(words.length)} از ${toFaNumber(appData.vocabulary.length)} واژه`;
     } else {
-      elements.wordCountText.textContent = `${toFaNumber(appData.vocabulary.length)} واژه‌ی عمومی`;
+      elements.wordCountText.textContent = `${toFaNumber(appData.vocabulary.length)} واژه`;
     }
   }
 
@@ -462,7 +483,7 @@
       elements.reviewCountText.textContent = 'واژه‌های موعددار در این بخش نمایش داده می‌شوند.';
       if (appData.vocabulary.length === 0) {
         elements.emptyReviewTitle.textContent = 'واژه‌ای برای مرور وجود ندارد';
-        elements.emptyReviewText.textContent = 'واژه‌های عمومی پس از ثبت در مخزن در این بخش نمایش داده می‌شوند.';
+        elements.emptyReviewText.textContent = 'واژه‌ها پس از ثبت در مخزن در این بخش نمایش داده می‌شوند.';
       } else {
         const nextWord = appData.vocabulary
           .slice()
@@ -492,32 +513,85 @@
     elements.reviewActions.hidden = !reviewAnswerRevealed;
   }
 
+  function createNoteText(tagName, className, text, direction = 'rtl', language = 'fa') {
+    const element = elementWithText(tagName, className, text);
+    element.dir = direction;
+    element.lang = language;
+    return element;
+  }
+
+  function renderNoteExample(example) {
+    const item = document.createElement('li');
+    item.className = `note-example${example.correct === false ? ' is-incorrect' : ''}`;
+    item.dir = 'rtl';
+
+    const line = document.createElement('div');
+    line.className = 'note-example-line';
+    const english = createNoteText('p', 'note-example-english', example.english, 'ltr', 'en');
+    line.append(english);
+    if (example.correct !== null) {
+      const status = createNoteText(
+        'span',
+        `note-example-status${example.correct ? ' is-correct' : ' is-incorrect'}`,
+        example.correct ? 'درست' : 'نادرست'
+      );
+      line.append(status);
+    }
+
+    const translation = createNoteText('p', 'note-example-translation', example.persian);
+    item.append(line, translation);
+    return item;
+  }
+
   function renderNoteCard(note) {
     const card = document.createElement('article');
     card.className = 'note-card';
-    const header = document.createElement('div');
-    header.className = 'note-card-header';
-    const date = document.createElement('time');
-    date.className = 'note-date';
-    date.dateTime = note.createdAt;
-    date.setAttribute('aria-label', `تاریخ ثبت: ${formatDate(note.createdAt)}`);
-    date.textContent = `ثبت در ${formatDate(note.createdAt)}`;
-    header.append(date, elementWithText('span', 'shared-source-badge', 'عمومی'));
+    card.dir = 'rtl';
+    card.lang = 'fa';
 
-    const content = document.createElement('div');
-    content.className = 'note-content-grid';
-    const original = document.createElement('section');
-    original.className = 'note-version';
-    const originalText = elementWithText('p', 'note-text', note.originalNote);
-    originalText.dir = 'auto';
-    original.append(elementWithText('div', 'note-version-label', 'نکته‌ی خام'), originalText);
-    const improved = document.createElement('section');
-    improved.className = 'note-version note-version-improved';
-    const improvedText = elementWithText('p', 'note-text', note.improvedNote);
-    improvedText.dir = 'auto';
-    improved.append(elementWithText('div', 'note-version-label', 'نسخه‌ی اصلاح‌شده'), improvedText);
-    content.append(original, improved);
-    card.append(header, content);
+    const header = document.createElement('header');
+    header.className = 'note-card-header';
+    header.append(createNoteText('h3', 'note-title', note.title));
+
+    const intro = document.createElement('div');
+    intro.className = 'note-card-intro';
+    const introMark = elementWithText('span', 'note-intro-mark', '✦');
+    introMark.setAttribute('aria-hidden', 'true');
+    intro.append(introMark, createNoteText('p', 'note-intro-text', note.intro));
+
+    const sections = document.createElement('div');
+    sections.className = 'note-sections';
+    note.sections.forEach((section, index) => {
+      const sectionCard = document.createElement('section');
+      sectionCard.className = 'note-section';
+
+      const sectionHeader = document.createElement('div');
+      sectionHeader.className = 'note-section-header';
+      const sectionNumber = elementWithText('span', 'note-section-number', toFaNumber(index + 1));
+      sectionNumber.setAttribute('aria-hidden', 'true');
+      sectionHeader.append(sectionNumber, createNoteText('h4', 'note-section-title', section.title));
+      sectionCard.append(sectionHeader, createNoteText('p', 'note-section-text', section.text));
+
+      if (section.examples.length > 0) {
+        const examples = document.createElement('ul');
+        examples.className = 'note-example-list';
+        examples.setAttribute('aria-label', `نمونه‌ها: ${section.title}`);
+        examples.replaceChildren(...section.examples.map(renderNoteExample));
+        sectionCard.append(examples);
+      }
+      sections.append(sectionCard);
+    });
+
+    card.append(header, intro, sections);
+    if (note.takeaway) {
+      const takeaway = document.createElement('aside');
+      takeaway.className = 'note-takeaway';
+      takeaway.append(
+        elementWithText('span', 'note-takeaway-label', 'جمع‌بندی'),
+        createNoteText('p', 'note-takeaway-text', note.takeaway)
+      );
+      card.append(takeaway);
+    }
     return card;
   }
 
@@ -532,7 +606,6 @@
     const badges = document.createElement('div');
     badges.className = 'idiom-badges';
     if (idiom.register) badges.append(elementWithText('span', 'idiom-register-badge', idiom.register));
-    badges.append(elementWithText('span', 'shared-source-badge', 'عمومی'));
     header.append(phrase, badges);
 
     const meaning = elementWithText('p', 'idiom-meaning', idiom.meaning);
@@ -553,11 +626,10 @@
   }
 
   function renderNotes() {
-    const orderedNotes = sharedNotes.slice().sort((first, second) => Date.parse(second.createdAt) - Date.parse(first.createdAt));
-    elements.sharedNotesList.replaceChildren(...orderedNotes.map(renderNoteCard));
-    elements.sharedNotesList.hidden = orderedNotes.length === 0;
-    elements.emptySharedNotes.hidden = orderedNotes.length > 0;
-    elements.sharedNoteCount.textContent = `${toFaNumber(orderedNotes.length)} نکته`;
+    elements.sharedNotesList.replaceChildren(...sharedNotes.map(renderNoteCard));
+    elements.sharedNotesList.hidden = sharedNotes.length === 0;
+    elements.emptySharedNotes.hidden = sharedNotes.length > 0;
+    elements.sharedNoteCount.textContent = `${toFaNumber(sharedNotes.length)} نکته`;
   }
 
   function renderIdioms() {
@@ -664,6 +736,6 @@
   });
 
   if (storageReadFailed) {
-    showToast('پیشرفت ذخیره‌شده‌ی مرور خوانده نشد؛ واژه‌های عمومی همچنان در دسترس‌اند.', 'error');
+    showToast('پیشرفت ذخیره‌شده‌ی مرور خوانده نشد؛ واژه‌ها همچنان در دسترس‌اند.', 'error');
   }
 })();

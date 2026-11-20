@@ -265,5 +265,56 @@ window.REPOSITORY_VOCABULARY = [
         isPrimary: false
       }
     ]
+  },
+  {
+    id: 'doomed',
+    word: 'doomed',
+    pronunciation: '/duːmd/',
+    meanings: [
+      {
+        partOfSpeech: 'adjective',
+        definition: 'محکوم به شکست، نابودی یا سرانجامی ناگوار',
+        example: 'The project is doomed to fail without more funding.',
+        explanation: [
+          { text: 'الگوی ', lang: 'fa' },
+          { text: 'be doomed to + verb/noun', lang: 'en' },
+          { text: ' یعنی محکوم بودن به نتیجه‌ای بد؛ ', lang: 'fa' },
+          { text: 'doomed from the start', lang: 'en' },
+          { text: ' یعنی از همان آغاز محکوم به شکست.', lang: 'fa' }
+        ],
+        isPrimary: true
+      },
+      {
+        partOfSpeech: 'verb',
+        definition: 'محکوم کرد؛ سرنوشت بدی برای چیزی رقم زد',
+        example: 'The lack of evidence doomed the case.',
+        explanation: [
+          { text: 'شکل گذشته و اسم مفعولِ فعل ', lang: 'fa' },
+          { text: 'doom', lang: 'en' },
+          { text: ' است؛ در این کاربرد یعنی سببِ شکست یا سرانجام بدِ چیزی شدن.', lang: 'fa' }
+        ],
+        isPrimary: false
+      }
+    ]
+  },
+  {
+    id: 'asshole',
+    word: 'asshole',
+    pronunciation: '/ˈæs.hoʊl/',
+    meanings: [
+      {
+        partOfSpeech: 'noun',
+        definition: 'آدم عوضی، بی‌شعور یا نفرت‌انگیز؛ توهینی رکیک و عامیانه',
+        example: 'He was acting like an asshole.',
+        explanation: 'واژه‌ای توهین‌آمیز و بسیار غیررسمی برای فردی بی‌ادب یا آزاردهنده؛ در موقعیت رسمی یا گفت‌وگوی مؤدبانه به‌کار نبر.',
+        isPrimary: true
+      },
+      {
+        partOfSpeech: 'noun',
+        definition: 'مقعد؛ کاربرد لفظی و رکیک واژه',
+        explanation: 'در گفت‌وگوی روزمره بیشتر به‌عنوان توهین به یک شخص به‌کار می‌رود.',
+        isPrimary: false
+      }
+    ]
   }
 ];
